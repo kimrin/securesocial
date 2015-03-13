@@ -10,5 +10,8 @@ addSbtPlugin("com.typesafe.play" % "sbt-plugin" % System.getProperty("play.versi
 // Add Scalariform
 addSbtPlugin("com.typesafe.sbt" % "sbt-scalariform" % "1.3.0")
 
+// For publishing Sonatype
+addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "0.2.2")
+
 // PGP signing
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.0.0")

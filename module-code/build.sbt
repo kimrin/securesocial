@@ -1,5 +1,10 @@
 import play.PlayImport.PlayKeys._
 
+import SonatypeKeys._
+
+// Import default settings. This changes `publishTo` settings to use the Sonatype repository and add several commands for publishing.
+sonatypeSettings
+
 name := "SecureSocial"
 
 version := Common.version
