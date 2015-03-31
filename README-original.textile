@@ -1,9 +1,3 @@
-h1. A fork of SecureSocial
-
-This is a fork of SecureSocial, originally developped by Jorge Aliss. We heavily use this plugin for one of our projects, and we sometimes want to change it. Even though We send pull requests, we don't want to stop our development unitil they are merged, so we decided to fork it. Basically, we send a PR of every change, but it's up to the original author whether the change is merged or not.
-
-Below is the original README as of Mar 12, 2015.
-
 h1. SecureSocial for Play 2 
 
 SecureSocial allows you to add an authentication UI to your app that works with services based on OAuth1, OAuth2 and OpenID protocols.  SecureSocial provides Scala and Java APIs so you can integrate it using your preferred language.
