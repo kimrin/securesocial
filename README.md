@@ -12,7 +12,7 @@ Below is the original README as of Mar 12, 2015:
 Add the dependencies:
 
 ```
-"tv.kazu" %% "securesocial" % "3.0.1"
+"tv.kazu" %% "securesocial" % "3.0.2"
 ```
 
 Then, implement `UserService` etc. See [the sample projects](samples/).
