@@ -23,6 +23,9 @@ Use the versions by the original author for Play! 2.2 and 2.1. See [the doc](htt
 
 # Changelog
 
+* 3.0.2 (2015-06-04)
+    * Added ExtraInfo to BasicProfile
+    * Merged changes in jaliss/securesocial#525
 * 3.0.1 (2015-03-31)
     * Added SlackProvider
 * 3.0.0 (2015-03-12)
