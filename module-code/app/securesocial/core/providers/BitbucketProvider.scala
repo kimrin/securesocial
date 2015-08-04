@@ -74,7 +74,10 @@ class BitbucketProvider(routesService: RoutesService,
           throw new AuthenticationException()
         case _ =>
           val userInfo = me.as[UserResponse]
-          BasicProfile(id, userInfo.uuid, None, None, Some(userInfo.display_name), None, None, authMethod, oAuth2Info = Some(info))
+          val extraInfo = Map(
+            "username" -> userInfo.username
+          )
+          BasicProfile(id, userInfo.uuid, None, None, Some(userInfo.display_name), None, None, authMethod, oAuth2Info = Some(info), extraInfo = Some(extraInfo))
       }
     } recover {
       case e: AuthenticationException => throw e
