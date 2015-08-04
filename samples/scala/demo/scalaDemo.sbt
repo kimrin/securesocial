@@ -8,7 +8,7 @@ scalaVersion := Common.scalaVersion
 
 scalariformSettings
 
-libraryDependencies += "ws.securesocial" %% "securesocial" % version.value
+libraryDependencies += "tv.kazu" %% "securesocial" % version.value
 
 resolvers += Resolver.sonatypeRepo("snapshots")
 
