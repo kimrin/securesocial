@@ -12,7 +12,7 @@ Below is the original README as of Mar 12, 2015:
 Add the dependencies:
 
 ```
-"tv.kazu" %% "securesocial" % "3.0.2"
+"tv.kazu" %% "securesocial" % "3.0.3"
 ```
 
 Then, implement `UserService` etc. See [the sample projects](samples/).
@@ -23,6 +23,8 @@ Use the versions by the original author for Play! 2.2 and 2.1. See [the doc](htt
 
 # Changelog
 
+* 3.0.3 (2015-12-01)
+    * Added BitbucketProvider
 * 3.0.2 (2015-06-04)
     * Added ExtraInfo to BasicProfile
     * Merged changes in jaliss/securesocial#525
