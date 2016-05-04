@@ -28,7 +28,7 @@ import scala.concurrent.Future
 class FoursquareProvider(routesService: RoutesService,
   cacheService: CacheService,
   client: OAuth2Client)
-    extends OAuth2Provider(routesService, client, cacheService) {
+    extends OAuth2Provider.Base(routesService, client, cacheService) {
   val GetAuthenticatedUser = "https://api.foursquare.com/v2/users/self?v=20140404oauth_token=%s"
   val AccessToken = "access_token"
   val TokenType = "token_type"

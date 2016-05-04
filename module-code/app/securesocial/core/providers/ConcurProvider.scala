@@ -43,7 +43,7 @@ import scala.xml.Node
 class ConcurProvider(routesService: RoutesService,
   cacheService: CacheService,
   client: OAuth2Client)
-    extends OAuth2Provider(routesService, client, cacheService) {
+    extends OAuth2Provider.Base(routesService, client, cacheService) {
   /** formatter used to parse the expiration date returned from Concur */
   private val ExpirationDateFormatter = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm:ss a")
 
