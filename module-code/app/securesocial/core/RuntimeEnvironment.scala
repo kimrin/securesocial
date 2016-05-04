@@ -29,7 +29,7 @@ trait RuntimeEnvironment[U] {
   val cacheService: CacheService
   val avatarService: Option[AvatarService]
 
-  val providers: Map[String, IdentityProvider]
+  val providerIds: List[String]
 
   val idGenerator: IdGenerator
   val authenticatorService: AuthenticatorService[U]
@@ -78,6 +78,8 @@ trait RuntimeEnvironment[U] {
         new TwitterProvider(routes, cacheService, oauth1ClientFor(TwitterProvider.Twitter))
       case XingProvider.Xing =>
         new XingProvider(routes, cacheService, oauth1ClientFor(XingProvider.Xing))
+      case UsernamePasswordProvider.UsernamePassword =>
+        new UsernamePasswordProvider[U](userService, avatarService, viewTemplates, passwordHashers)
       case _ => throw new RuntimeException(s"Invalid provider '$provider'")
     }
   }
@@ -120,29 +122,24 @@ object RuntimeEnvironment {
     override implicit def executionContext: ExecutionContext =
       PlayExecution.defaultContext
 
-    protected def include(p: IdentityProvider) = p.id -> p
-    override lazy val providers = ListMap(
-      // oauth 2 client providers
-      include(createProvider(FacebookProvider.Facebook)),
-      include(createProvider(FoursquareProvider.Foursquare)),
-      include(createProvider(GitHubProvider.GitHub)),
-      include(createProvider(GoogleProvider.Google)),
-      include(createProvider(InstagramProvider.Instagram)),
-      include(createProvider(ConcurProvider.Concur)),
-      include(createProvider(SoundcloudProvider.Soundcloud)),
-      //include(createProvider(LinkedInOAuth2Provider.LinkedIn)),
-      include(createProvider(VkProvider.Vk)),
-      include(createProvider(DropboxProvider.Dropbox)),
-      include(createProvider(WeiboProvider.Weibo)),
-      include(createProvider(ConcurProvider.Concur)),
-      include(createProvider(SlackProvider.Slack)),
-      include(createProvider(BitbucketProvider.Bitbucket)),
-      // oauth 1 client providers
-      include(createProvider(LinkedInProvider.LinkedIn)),
-      include(createProvider(TwitterProvider.Twitter)),
-      include(createProvider(XingProvider.Xing)),
-      // username password
-      include(new UsernamePasswordProvider[U](userService, avatarService, viewTemplates, passwordHashers))
+    override lazy val providerIds = List(
+      FacebookProvider.Facebook,
+      FoursquareProvider.Foursquare,
+      GitHubProvider.GitHub,
+      GoogleProvider.Google,
+      InstagramProvider.Instagram,
+      ConcurProvider.Concur,
+      SoundcloudProvider.Soundcloud,
+      VkProvider.Vk,
+      DropboxProvider.Dropbox,
+      WeiboProvider.Weibo,
+      ConcurProvider.Concur,
+      SlackProvider.Slack,
+      BitbucketProvider.Bitbucket,
+      LinkedInProvider.LinkedIn,
+      TwitterProvider.Twitter,
+      XingProvider.Xing,
+      UsernamePasswordProvider.UsernamePassword
     )
   }
 }

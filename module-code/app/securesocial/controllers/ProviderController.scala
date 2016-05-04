@@ -85,10 +85,8 @@ trait BaseProviderController[U] extends SecureSocial[U] {
    * @param scope to ask for different scopes from those in securesocial.conf
    */
   private def getProvider(provider: String, scope: Option[String]): Option[IdentityProvider] = {
-    env.providers.get(provider).map { providerObj =>
-      val settings = OAuth2Settings.forProvider(provider).copy(scope = scope)
-      env.createProvider(provider, Some(settings))
-    }
+    val settings = OAuth2Settings.forProvider(provider).copy(scope = scope)
+    Some(env.createProvider(provider, Some(settings)))
   }
 
   /**
