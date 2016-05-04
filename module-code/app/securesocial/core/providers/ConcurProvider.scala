@@ -54,6 +54,7 @@ class ConcurProvider(routesService: RoutesService,
    * used to get the access token. Instead, a HTTP GET is used in their implementation.
    */
   override def getAccessToken[A](code: String)(implicit request: Request[A]): Future[OAuth2Info] = {
+    val settings = client.settings
     val url = settings.accessTokenUrl + "?" + OAuth2Constants.Code + "=" + code + "&" +
       OAuth2Constants.ClientId + "=" + settings.clientId + "&" +
       OAuth2Constants.ClientSecret + "=" + settings.clientSecret
