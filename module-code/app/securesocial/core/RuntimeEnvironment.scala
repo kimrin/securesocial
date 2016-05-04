@@ -72,6 +72,8 @@ trait RuntimeEnvironment[U] {
         new SlackProvider(routes, cacheService, oauth2ClientFor(SlackProvider.Slack, customOAuth2Settings))
       case BitbucketProvider.Bitbucket =>
         BitbucketProvider(routes, cacheService, oauth2ClientFor(BitbucketProvider.Bitbucket, customOAuth2Settings))
+      case BacklogProvider.Backlog =>
+        new BacklogProvider(routes, cacheService, httpService, miscParam)
       case LinkedInProvider.LinkedIn =>
         new LinkedInProvider(routes, cacheService, oauth1ClientFor(LinkedInProvider.LinkedIn))
       case TwitterProvider.Twitter =>
@@ -136,6 +138,7 @@ object RuntimeEnvironment {
       ConcurProvider.Concur,
       SlackProvider.Slack,
       BitbucketProvider.Bitbucket,
+      BacklogProvider.Backlog,
       LinkedInProvider.LinkedIn,
       TwitterProvider.Twitter,
       XingProvider.Xing,
