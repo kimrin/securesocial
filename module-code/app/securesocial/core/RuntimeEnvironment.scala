@@ -46,7 +46,7 @@ trait RuntimeEnvironment[U] {
    * @param customOAuth2Settings Valid only for OAuth2Provider. If None, the default settings are used.
    * @return
    */
-  def createProvider(provider: String, customOAuth2Settings: Option[OAuth2Settings] = None): IdentityProvider = {
+  def createProvider(provider: String, customOAuth2Settings: Option[OAuth2Settings] = None, miscParam: Option[String] = None): IdentityProvider = {
     provider match {
       case FacebookProvider.Facebook =>
         new FacebookProvider(routes, cacheService, oauth2ClientFor(FacebookProvider.Facebook, customOAuth2Settings))
