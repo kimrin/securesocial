@@ -43,14 +43,23 @@ class BacklogOAuth2Client(
 
 /**
  * A Backlog provider
+ *  @param routeService
+ *  @param cacheService
+ *  @param httpService
+ *  @param optSpaceIdOrApiHost One of the following:
+ *  <ul>
+ *    <li>Some("space-id.backlogtool.com")</li>
+ *    <li>Some("space-id")</li>
+ *    <li>None (when the data is in the session)</li>
+ * </ul>
  */
 class BacklogProvider(
   protected val routesService: RoutesService,
   protected val cacheService: CacheService,
   httpService: HttpService,
-  private var optSpaceId: Option[String])(implicit val executionContext: ExecutionContext)
+  private var optSpaceIdOrApiHost: Option[String])(implicit val executionContext: ExecutionContext)
     extends OAuth2Provider {
-  private val getAuthenticatedUserUrl = "https://{spaceId}.backlogtool.com/api/v2/users/myself"
+  private val getAuthenticatedUserUrl = "https://{apiHost}/api/v2/users/myself"
   val AccessToken = "token"
 
   implicit val errorReads: Reads[Error] = Json.reads[Error]
@@ -59,25 +68,32 @@ class BacklogProvider(
 
   val id = BacklogProvider.Backlog
 
-  private def spaceId: String = {
-    optSpaceId.getOrElse {
-      logger.error("[securesocial] spaceId isn't set.")
+  private lazy val apiHost: String = {
+    optSpaceIdOrApiHost.map { spaceIdOrApiHost =>
+      if (spaceIdOrApiHost.contains(".")) {
+        spaceIdOrApiHost
+      } else {
+        s"${spaceIdOrApiHost}.backlogtool.com"
+      }
+    }.getOrElse {
+      logger.error("[securesocial] optSpaceIdOrApiHost isn't set.")
       throw new AuthenticationException()
     }
   }
 
   lazy val client = {
     val defaultSettings = OAuth2Settings.forProvider(id)
-    new BacklogOAuth2Client(httpService, getSettingsForSpace(spaceId, defaultSettings))
-  }
-
-  private def getSettingsForSpace(spaceId: String, settings: OAuth2Settings) = {
-    val authorizationUrl = settings.authorizationUrl.replace("{spaceId}", spaceId)
-    val accessTokenUrl = settings.accessTokenUrl.replace("{spaceId}", spaceId)
-    settings.copy(
+    val authorizationUrl = getUrlForSpace(defaultSettings.authorizationUrl)
+    val accessTokenUrl = getUrlForSpace(defaultSettings.accessTokenUrl)
+    val settings = defaultSettings.copy(
       authorizationUrl = authorizationUrl,
       accessTokenUrl = accessTokenUrl
     )
+    new BacklogOAuth2Client(httpService, settings)
+  }
+
+  private def getUrlForSpace(url: String): String = {
+    url.replace("{apiHost}", apiHost)
   }
 
   override protected def buildInfo(response: WSResponse): OAuth2Info = {
@@ -90,7 +106,7 @@ class BacklogProvider(
   }
 
   def fillProfile(info: OAuth2Info): Future[BasicProfile] = {
-    val url = getAuthenticatedUserUrl.replace("{spaceId}", spaceId)
+    val url = getUrlForSpace(getAuthenticatedUserUrl)
     logger.debug(s"[securesocial] getting profile info from $url")
     client.retrieveProfile(url, info.accessToken).map { me =>
       logger.debug("[securesocial] got response: " + Json.stringify(me))
@@ -133,7 +149,7 @@ class BacklogProvider(
             stateOk <- cacheService.getAs[Tuple2[String, String]](sessionId).map { optT =>
               (optT.map {
                 case (originalState, miscParam) =>
-                  optSpaceId = Some(miscParam)
+                  optSpaceIdOrApiHost = Some(miscParam)
                   val stateInQueryString = request.queryString.get(OAuth2Constants.State).flatMap(_.headOption).getOrElse(throw new AuthenticationException())
                   originalState == stateInQueryString
               }).getOrElse {
