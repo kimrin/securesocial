@@ -116,7 +116,10 @@ class BacklogProvider(
         throw new AuthenticationException()
       }.getOrElse {
         val userInfo = me.as[AuthTestResponse]
-        BasicProfile(id, userInfo.id.toString, None, None, Some(userInfo.userId), Some(userInfo.mailAddress), None, authMethod, oAuth2Info = Some(info))
+        val extraInfo = Map(
+          "space_host_name" -> apiHost
+        )
+        BasicProfile(id, userInfo.id.toString, None, None, Some(userInfo.userId), Some(userInfo.mailAddress), None, authMethod, oAuth2Info = Some(info), extraInfo = Some(extraInfo))
       }
     } recover {
       case e: AuthenticationException => throw e
