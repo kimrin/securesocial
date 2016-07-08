@@ -16,6 +16,8 @@
  */
 package securesocial.controllers
 
+import javax.inject.Inject
+
 import securesocial.core._
 import securesocial.core.SecureSocial._
 import play.api.mvc.Result
@@ -23,23 +25,24 @@ import play.api.Play
 import play.api.data.Form
 import play.api.data.Forms._
 import securesocial.core.providers.utils.PasswordValidator
-import play.api.i18n.Messages
+import play.api.i18n.{ I18nSupport, Messages }
 import scala.concurrent.{ Await, ExecutionContext, Future }
 import play.filters.csrf._
+import play.api.i18n.Messages.Implicits._
+import play.api.Play.current
 
 /**
  * A default PasswordChange controller that uses the BasicProfile as the user type
  *
  * @param env An environment
  */
-class PasswordChange(override implicit val env: RuntimeEnvironment[BasicProfile]) extends BasePasswordChange[BasicProfile]
+class PasswordChange @Inject() (override implicit val env: RuntimeEnvironment) extends BasePasswordChange
 
 /**
  * A trait that defines the password change functionality
  *
- * @tparam U the user object type
  */
-trait BasePasswordChange[U] extends SecureSocial[U] {
+trait BasePasswordChange extends SecureSocial {
   val CurrentPassword = "currentPassword"
   val InvalidPasswordMessage = "securesocial.passwordChange.invalidPassword"
   val NewPassword = "newPassword"
@@ -66,7 +69,7 @@ trait BasePasswordChange[U] extends SecureSocial[U] {
    * @tparam A the type of the user object
    * @return a future boolean
    */
-  def checkCurrentPassword[A](suppliedPassword: String)(implicit request: SecuredRequest[A, U]): Future[Boolean] = {
+  def checkCurrentPassword[A](suppliedPassword: String)(implicit request: SecuredRequest[A, env.U]): Future[Boolean] = {
     env.userService.passwordInfoFor(request.user).map {
       case Some(info) =>
         env.passwordHashers.get(info.hasher).exists {
@@ -76,7 +79,7 @@ trait BasePasswordChange[U] extends SecureSocial[U] {
     }
   }
 
-  private def execute[A](f: Form[ChangeInfo] => Future[Result])(implicit request: SecuredRequest[A, U]): Future[Result] = {
+  private def execute[A](f: Form[ChangeInfo] => Future[Result])(implicit request: SecuredRequest[A, env.U]): Future[Result] = {
     val form = Form[ChangeInfo](
       mapping(
         CurrentPassword ->
@@ -128,14 +131,15 @@ trait BasePasswordChange[U] extends SecureSocial[U] {
           errors => Future.successful(BadRequest(env.viewTemplates.getPasswordChangePage(errors))),
           info => {
             val newPasswordInfo = env.currentHasher.hash(info.newPassword)
-            implicit val userLang = request2lang(request)
+            val userLang = request2lang(request)
+            implicit val messages = applicationMessages
             env.userService.updatePasswordInfo(request.user, newPasswordInfo).map {
               case Some(u) =>
                 env.mailer.sendPasswordChangedNotice(u)(request, userLang)
-                val result = Redirect(onHandlePasswordChangeGoTo).flashing(Success -> Messages(OkMessage)(userLang))
+                val result = Redirect(onHandlePasswordChangeGoTo).flashing(Success -> Messages(OkMessage)(messages))
                 Events.fire(new PasswordChangeEvent(request.user)).map(result.withSession).getOrElse(result)
               case None =>
-                Redirect(onHandlePasswordChangeGoTo).flashing(Error -> Messages("securesocial.password.error")(userLang))
+                Redirect(onHandlePasswordChangeGoTo).flashing(Error -> Messages("securesocial.password.error")(messages))
             }
           }
         )

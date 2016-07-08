@@ -16,29 +16,29 @@
  */
 package securesocial.controllers
 
+import javax.inject.Inject
 import play.api.Play
-import play.api.Play.current
 import play.api.i18n.Messages
 import play.api.mvc._
 import securesocial.core._
 import securesocial.core.authenticator.CookieAuthenticator
 import securesocial.core.services.SaveMode
 import securesocial.core.utils._
+import play.api.i18n.Messages.Implicits._
+import play.api.Play.current
 
 import scala.concurrent.Future
 
 /**
  * A default controller that uses the BasicProfile as the user type
  */
-class ProviderController(override implicit val env: RuntimeEnvironment[BasicProfile])
-  extends BaseProviderController[BasicProfile]
+class ProviderController @Inject() (override implicit val env: RuntimeEnvironment)
+  extends BaseProviderController
 
 /**
  * A trait that provides the means to authenticate users for web applications
- *
- * @tparam U the user type
  */
-trait BaseProviderController[U] extends SecureSocial[U] {
+trait BaseProviderController extends SecureSocial {
   import securesocial.controllers.ProviderControllerHelper.{ logger, toUrl }
 
   /**
@@ -73,6 +73,7 @@ trait BaseProviderController[U] extends SecureSocial[U] {
    * Find the AuthenticatorBuilder needed to start the authenticated session
    */
   private def builder() = {
+
     //todo: this should be configurable maybe
     env.authenticatorService.find(CookieAuthenticator.Id).getOrElse {
       logger.error(s"[securesocial] missing CookieAuthenticatorBuilder")
@@ -109,7 +110,7 @@ trait BaseProviderController[U] extends SecureSocial[U] {
     getProvider(provider, scope, miscParam).map {
       _.authenticate().flatMap {
         case denied: AuthenticationResult.AccessDenied =>
-          Future.successful(Redirect(env.routes.loginPageUrl).flashing("error" -> Messages("securesocial.login.accessDenied")))
+          Future.successful(Redirect(env.routes.accessDeniedUrl).flashing("error" -> Messages("securesocial.login.accessDenied")))
         case failed: AuthenticationResult.Failed =>
           logger.error(s"[securesocial] authentication failed, reason: ${failed.error}")
           throw new AuthenticationException()

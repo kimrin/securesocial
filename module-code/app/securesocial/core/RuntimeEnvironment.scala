@@ -13,30 +13,33 @@ import play.api.libs.concurrent.{ Execution => PlayExecution }
 /**
  * A runtime environment where the services needed are available
  */
-trait RuntimeEnvironment[U] {
-  val routes: RoutesService
+trait RuntimeEnvironment {
 
-  val viewTemplates: ViewTemplates
-  val mailTemplates: MailTemplates
+  type U
 
-  val mailer: Mailer
+  def routes: RoutesService
 
-  val currentHasher: PasswordHasher
-  val passwordHashers: Map[String, PasswordHasher]
-  val passwordValidator: PasswordValidator
+  def viewTemplates: ViewTemplates
+  def mailTemplates: MailTemplates
 
-  val httpService: HttpService
-  val cacheService: CacheService
-  val avatarService: Option[AvatarService]
+  def mailer: Mailer
 
   val providerIds: List[String]
 
-  val idGenerator: IdGenerator
-  val authenticatorService: AuthenticatorService[U]
+  def currentHasher: PasswordHasher
+  def passwordHashers: Map[String, PasswordHasher]
+  def passwordValidator: PasswordValidator
 
-  val eventListeners: List[EventListener[U]]
+  def httpService: HttpService
+  def cacheService: CacheService
+  def avatarService: Option[AvatarService]
 
-  val userService: UserService[U]
+  def idGenerator: IdGenerator
+  def authenticatorService: AuthenticatorService[U]
+
+  def eventListeners: Seq[EventListener]
+
+  def userService: UserService[U]
 
   implicit def executionContext: ExecutionContext
 
@@ -68,6 +71,8 @@ trait RuntimeEnvironment[U] {
         new DropboxProvider(routes, cacheService, oauth2ClientFor(DropboxProvider.Dropbox, customOAuth2Settings))
       case WeiboProvider.Weibo =>
         new WeiboProvider(routes, cacheService, oauth2ClientFor(WeiboProvider.Weibo, customOAuth2Settings))
+      case SpotifyProvider.Spotify =>
+        new SpotifyProvider(routes, cacheService, oauth2ClientFor(SpotifyProvider.Spotify, customOAuth2Settings))
       case SlackProvider.Slack =>
         new SlackProvider(routes, cacheService, oauth2ClientFor(SlackProvider.Slack, customOAuth2Settings))
       case BitbucketProvider.Bitbucket =>
@@ -99,7 +104,7 @@ object RuntimeEnvironment {
    * A default runtime environment.  All built in services are included.
    * You can start your app with with by only adding a userService to handle users.
    */
-  abstract class Default[U] extends RuntimeEnvironment[U] {
+  abstract class Default extends RuntimeEnvironment {
     override lazy val routes: RoutesService = new RoutesService.Default()
 
     override lazy val viewTemplates: ViewTemplates = new ViewTemplates.Default(this)
@@ -120,7 +125,7 @@ object RuntimeEnvironment {
       new HttpHeaderAuthenticatorBuilder[U](new AuthenticatorStore.Default(cacheService), idGenerator)
     )
 
-    override lazy val eventListeners: List[EventListener[U]] = List()
+    override lazy val eventListeners: Seq[EventListener] = Seq()
     override implicit def executionContext: ExecutionContext =
       PlayExecution.defaultContext
 
@@ -136,6 +141,7 @@ object RuntimeEnvironment {
       DropboxProvider.Dropbox,
       WeiboProvider.Weibo,
       ConcurProvider.Concur,
+      SpotifyProvider.Spotify,
       SlackProvider.Slack,
       BitbucketProvider.Bitbucket,
       BacklogProvider.Backlog,

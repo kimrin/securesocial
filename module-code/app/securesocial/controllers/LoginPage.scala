@@ -16,6 +16,8 @@
  */
 package securesocial.controllers
 
+import javax.inject.Inject
+
 import securesocial.core._
 import securesocial.core.utils._
 import play.api.Play
@@ -29,12 +31,12 @@ import play.filters.csrf._
  *
  * @param env An environment
  */
-class LoginPage(override implicit val env: RuntimeEnvironment[BasicProfile]) extends BaseLoginPage[BasicProfile]
+class LoginPage @Inject() (override implicit val env: RuntimeEnvironment) extends BaseLoginPage
 
 /**
  * The trait that defines the login page controller
  */
-trait BaseLoginPage[U] extends SecureSocial[U] {
+trait BaseLoginPage extends SecureSocial {
   private val logger = play.api.Logger("securesocial.controllers.LoginPage")
 
   /**
@@ -48,9 +50,15 @@ trait BaseLoginPage[U] extends SecureSocial[U] {
    */
   def login = CSRFAddToken {
     UserAwareAction { implicit request =>
-      val to = ProviderControllerHelper.landingUrl
       if (request.user.isDefined) {
-        // if the user is already logged in just redirect to the app
+        // if the user is already logged in, a referer is set and we handle the
+        // referer the same way as an OriginalUrl in the session, we redirect back
+        // to this URL. Otherwise, just redirect to the application's landing page
+        val to = (if (SecureSocial.enableRefererAsOriginalUrl) {
+          SecureSocial.refererPathAndQuery
+        } else {
+          None
+        }).getOrElse(ProviderControllerHelper.landingUrl)
         logger.debug("User already logged in, skipping login page. Redirecting to %s".format(to))
         Redirect(to)
       } else {
