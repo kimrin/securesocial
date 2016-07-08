@@ -32,6 +32,8 @@ trait OAuth2Client {
   val settings: OAuth2Settings
   val httpService: HttpService
 
+  def navigationFlowUrl(redirectUri: String, state: String): String
+
   def exchangeCodeForToken(code: String, callBackUrl: String, builder: OAuth2InfoBuilder): Future[OAuth2Info]
 
   def retrieveProfile(profileUrl: String): Future[JsValue]
@@ -45,6 +47,25 @@ object OAuth2Client {
 
   class Default(val httpService: HttpService, val settings: OAuth2Settings)(implicit val executionContext: ExecutionContext)
       extends OAuth2Client {
+
+    protected val logger = play.api.Logger(this.getClass.getName)
+
+    def navigationFlowUrl(redirectUri: String, state: String): String = {
+      logger.debug("[securesocial] authorizationUrl = %s".format(settings.authorizationUrl))
+      var params = List(
+        (OAuth2Constants.ClientId, settings.clientId),
+        (OAuth2Constants.RedirectUri, redirectUri),
+        (OAuth2Constants.ResponseType, OAuth2Constants.Code),
+        (OAuth2Constants.State, state))
+      settings.scope.foreach(s => {
+        params = (OAuth2Constants.Scope, s) :: params
+      })
+      settings.authorizationUrlParams.foreach(e => {
+        params = e :: params
+      })
+      settings.authorizationUrl +
+        params.map(p => URLEncoder.encode(p._1, "UTF-8") + "=" + URLEncoder.encode(p._2, "UTF-8")).mkString("?", "&", "")
+    }
 
     override def exchangeCodeForToken(code: String, callBackUrl: String, builder: OAuth2InfoBuilder): Future[OAuth2Info] = {
       val params = Map(
@@ -61,19 +82,15 @@ object OAuth2Client {
       httpService.url(profileUrl).get().map(_.json)
   }
 }
-/**
- * Base class for all OAuth2 providers
- */
-abstract class OAuth2Provider(
-  routesService: RoutesService,
-  client: OAuth2Client,
-  cacheService: CacheService)
-    extends IdentityProvider with ApiSupport {
 
-  protected implicit val executionContext: ExecutionContext = client.executionContext
+trait OAuth2Provider extends IdentityProvider with ApiSupport {
+  protected val routesService: RoutesService
+  protected val client: OAuth2Client
+  protected val cacheService: CacheService
+
+  protected implicit def executionContext: ExecutionContext
   protected val logger = play.api.Logger(this.getClass.getName)
 
-  val settings = client.settings
   def authMethod = AuthenticationMethod.OAuth2
 
   protected def getAccessToken[A](code: String)(implicit request: Request[A]): Future[OAuth2Info] = {
@@ -141,20 +158,7 @@ abstract class OAuth2Provider(
           val sessionId = request.session.get(IdentityProvider.SessionId).getOrElse(UUID.randomUUID().toString)
           cacheService.set(sessionId, state, 300).map {
             unit =>
-              var params = List(
-                (OAuth2Constants.ClientId, settings.clientId),
-                (OAuth2Constants.RedirectUri, routesService.authenticationUrl(id)),
-                (OAuth2Constants.ResponseType, OAuth2Constants.Code),
-                (OAuth2Constants.State, state))
-              settings.scope.foreach(s => {
-                params = (OAuth2Constants.Scope, s) :: params
-              })
-              settings.authorizationUrlParams.foreach(e => {
-                params = e :: params
-              })
-              val url = settings.authorizationUrl +
-                params.map(p => URLEncoder.encode(p._1, "UTF-8") + "=" + URLEncoder.encode(p._2, "UTF-8")).mkString("?", "&", "")
-              logger.debug("[securesocial] authorizationUrl = %s".format(settings.authorizationUrl))
+              val url = client.navigationFlowUrl(routesService.authenticationUrl(id), state)
               logger.debug("[securesocial] redirecting to: [%s]".format(url))
               AuthenticationResult.NavigationFlow(Results.Redirect(url).withSession(request.session + (IdentityProvider.SessionId -> sessionId)))
           }
@@ -213,6 +217,18 @@ abstract class OAuth2Provider(
     } getOrElse {
       Future.successful(AuthenticationResult.Failed(malformedJson))
     }
+  }
+}
+
+object OAuth2Provider {
+  /**
+   * Base class for all OAuth2 providers
+   */
+  abstract class Base(
+      val routesService: RoutesService,
+      val client: OAuth2Client,
+      val cacheService: CacheService) extends OAuth2Provider {
+    protected implicit val executionContext: ExecutionContext = client.executionContext
   }
 }
 

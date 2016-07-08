@@ -26,22 +26,22 @@
     }
 
 
-@defining( env.providers.values.filter( _.id != UsernamePassword) ) { externalProviders =>
+@defining( env.providerIds.filter(_ != UsernamePassword) ) { externalProviderIds =>
 
-        @if( externalProviders.size > 0 ) {
+        @if( externalProviderIds.size > 0 ) {
             <div class="clearfix">
                 <p>@Messages("securesocial.login.instructions")</p>
                 <p>
-                    @for(p <- externalProviders) {
-                        @securesocial.views.html.provider(p.id)
+                    @for(providerId <- externalProviderIds) {
+                        @securesocial.views.html.provider(providerId)
                     }
                 </p>
             </div>
         }
 
-        @env.providers.get(UsernamePassword).map { up =>
+        @env.providerIds.filter(_ == UsernamePassword).map { up =>
             <div class="clearfix">
-                @if( externalProviders.size > 0 ) {
+                @if( externalProviderIds.size > 0 ) {
                     <p>@Messages("securesocial.login.useEmailAndPassword")</p>
                 } else {
                     <p>@Messages("securesocial.login.useEmailAndPasswordOnly")</p>

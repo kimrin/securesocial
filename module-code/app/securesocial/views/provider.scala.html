@@ -5,10 +5,11 @@
 @import play.api.Logger
 @import helper._
 @import play.api.Play
+@import scala.util.Try
 
 @implicitFieldConstructor = @{ FieldConstructor(securesocial.views.html.inputFieldConstructor.f) }
 
-@env.providers.get(providerId).map { provider =>
+@Try(env.createProvider(providerId)).toOption.map { provider =>
             @if( provider.authMethod == OAuth1 || provider.authMethod == OAuth2 ) {
                 @defining( "images/providers/%s.png".format(provider.id) ) { imageUrl =>
                     <a href="@env.routes.authenticationUrl(provider.id)"> <img src="@securesocial.controllers.routes.Assets.at(imageUrl)"/></a>

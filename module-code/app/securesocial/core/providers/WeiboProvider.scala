@@ -29,7 +29,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 class WeiboProvider(routesService: RoutesService,
   cacheService: CacheService,
   client: OAuth2Client)
-    extends OAuth2Provider(routesService, client, cacheService) {
+    extends OAuth2Provider.Base(routesService, client, cacheService) {
   val GetAuthenticatedUser = "https://api.weibo.com/2/users/show.json?uid=%s&access_token=%s"
   val AccessToken = "access_token"
   val Message = "error"

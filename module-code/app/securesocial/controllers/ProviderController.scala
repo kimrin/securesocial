@@ -46,14 +46,14 @@ trait BaseProviderController[U] extends SecureSocial[U] {
    *
    * @param provider The id of the provider that needs to handle the call
    */
-  def authenticate(provider: String, redirectTo: Option[String] = None, scope: Option[String] = None) = handleAuth(provider, redirectTo, scope)
+  def authenticate(provider: String, redirectTo: Option[String] = None, scope: Option[String] = None, miscParam: Option[String]) = handleAuth(provider, redirectTo, scope, miscParam)
 
   /**
    * The authentication entry point for POST requests
    *
    * @param provider The id of the provider that needs to handle the call
    */
-  def authenticateByPost(provider: String, redirectTo: Option[String] = None, scope: Option[String] = None) = handleAuth(provider, redirectTo, scope)
+  def authenticateByPost(provider: String, redirectTo: Option[String] = None, scope: Option[String] = None, miscParam: Option[String]) = handleAuth(provider, redirectTo, scope, miscParam)
 
   /**
    * Overrides the original url if neded
@@ -83,16 +83,15 @@ trait BaseProviderController[U] extends SecureSocial[U] {
   /**
    * @param provider e.g. "github"
    * @param scope Pass Some[String] to ask for different scopes from those in securesocial.conf
+   * @param miscParam
    */
-  private def getProvider(provider: String, scope: Option[String]): Option[IdentityProvider] = {
-    env.providers.get(provider).map { providerObj =>
-      val settings = if (scope.isDefined) {
-        OAuth2Settings.forProvider(provider).copy(scope = scope)
-      } else {
-        OAuth2Settings.forProvider(provider)
-      }
-      env.createProvider(provider, Some(settings))
+  private def getProvider(provider: String, scope: Option[String], miscParam: Option[String]): Option[IdentityProvider] = {
+    val settings = if (scope.isDefined) {
+      OAuth2Settings.forProvider(provider).copy(scope = scope)
+    } else {
+      OAuth2Settings.forProvider(provider)
     }
+    Some(env.createProvider(provider, Some(settings), miscParam))
   }
 
   /**
@@ -100,12 +99,14 @@ trait BaseProviderController[U] extends SecureSocial[U] {
    *
    * @param provider the provider that needs to handle the flow
    * @param redirectTo the url the user needs to be redirected to after being authenticated
+   * @param scope OAuth2 scope
+   * @param miscParam miscellaneous information necessary for providers
    */
-  private def handleAuth(provider: String, redirectTo: Option[String], scope: Option[String]) = UserAwareAction.async { implicit request =>
+  private def handleAuth(provider: String, redirectTo: Option[String], scope: Option[String], miscParam: Option[String] = None) = UserAwareAction.async { implicit request =>
     val authenticationFlow = request.user.isEmpty
     val modifiedSession = overrideOriginalUrl(request.session, redirectTo)
 
-    getProvider(provider, scope).map {
+    getProvider(provider, scope, miscParam).map {
       _.authenticate().flatMap {
         case denied: AuthenticationResult.AccessDenied =>
           Future.successful(Redirect(env.routes.loginPageUrl).flashing("error" -> Messages("securesocial.login.accessDenied")))
