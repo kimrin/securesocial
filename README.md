@@ -12,7 +12,7 @@ Below is the original README as of Mar 12, 2015:
 Add the dependencies:
 
 ```
-"tv.kazu" %% "securesocial" % "3.0.5"
+"tv.kazu" %% "securesocial" % "3.0.6"
 ```
 
 Then, implement `UserService` etc. See [the sample projects](samples/).
@@ -23,6 +23,9 @@ Use the versions by the original author for Play! 2.2 and 2.1. See [the doc](htt
 
 # Changelog
 
+* 3.0.6 (2016-07-08)
+    * Added Backlog provider
+    * Fixed demo projects
 * 3.0.5 (2016-05-12)
     * Fixed bug related to "scope" introduced in 3.0.4
 * 3.0.4 (2015-12-08)
