@@ -11,7 +11,7 @@ version := Common.version
 
 scalaVersion := Common.scalaVersion
 
-crossScalaVersions := Seq("2.11.7", "2.10.5")
+crossScalaVersions := Seq("2.11.8")
 
 //PlayKeys.generateRefReverseRouter := false
 
