@@ -20,7 +20,7 @@ import javax.inject.Inject
 
 import play.api.Application
 import play.api.http.HeaderNames
-import play.api.i18n.Messages
+import play.api.i18n.{ Messages, I18nSupport, MessagesApi }
 import play.api.libs.json.Json
 import play.api.mvc.{ Result, _ }
 import play.twirl.api.Html
@@ -35,7 +35,7 @@ import scala.concurrent.{ ExecutionContext, Future }
  * if available.
  *
  */
-trait SecureSocial extends Controller {
+trait SecureSocial extends Controller with I18nSupport {
   import SecureSocial._
   implicit val env: RuntimeEnvironment
 
@@ -48,14 +48,14 @@ trait SecureSocial extends Controller {
   protected def notAuthorizedPage()(implicit request: RequestHeader): Html = env.viewTemplates.getNotAuthorizedPage
 
   @Inject
-  implicit var messages: Messages = null
+  implicit var messagesApi: MessagesApi = null
 
   protected def notAuthenticatedResult[A](implicit request: Request[A]): Future[Result] = {
     Future.successful {
       render {
         case Accepts.Json() => notAuthenticatedJson
         case Accepts.Html() => Redirect(env.routes.loginPageUrl).
-          flashing("error" -> messages("securesocial.loginRequired"))
+          flashing("error" -> Messages("securesocial.loginRequired"))
           .withSession(request.session + (SecureSocial.OriginalUrlKey -> request.uri))
         case _ => Unauthorized("Credentials required")
       }

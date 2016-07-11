@@ -143,10 +143,10 @@ trait BasePasswordChange extends SecureSocial {
             env.userService.updatePasswordInfo(request.user, newPasswordInfo).map {
               case Some(u) =>
                 env.mailer.sendPasswordChangedNotice(u)(request, userLang)
-                val result = Redirect(onHandlePasswordChangeGoTo).flashing(Success -> Messages(OkMessage)(messages))
+                val result = Redirect(onHandlePasswordChangeGoTo).flashing(Success -> Messages(OkMessage))
                 Events.fire(new PasswordChangeEvent(request.user)).map(result.withSession).getOrElse(result)
               case None =>
-                Redirect(onHandlePasswordChangeGoTo).flashing(Error -> Messages("securesocial.password.error")(messages))
+                Redirect(onHandlePasswordChangeGoTo).flashing(Error -> Messages("securesocial.password.error"))
             }
           }
         )
