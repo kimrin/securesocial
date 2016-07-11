@@ -1,5 +1,6 @@
 package securesocial.core
 
+import play.api.Configuration
 import securesocial.controllers.{ MailTemplates, ViewTemplates }
 import securesocial.core.authenticator._
 import securesocial.core.providers._
@@ -16,6 +17,8 @@ import play.api.libs.concurrent.{ Execution => PlayExecution }
 trait RuntimeEnvironment {
 
   type U
+
+  implicit val configuration: Configuration
 
   def routes: RoutesService
 

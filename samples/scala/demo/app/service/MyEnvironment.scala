@@ -19,9 +19,10 @@ package service
 
 import com.google.inject.{ Inject, Singleton }
 import controllers.CustomRoutesService
+import play.api.Configuration
 import securesocial.core.{ BasicProfile, RuntimeEnvironment }
 
-class MyEnvironment extends RuntimeEnvironment.Default {
+class MyEnvironment @Inject() ()(implicit val configuration: Configuration) extends RuntimeEnvironment.Default {
   override type U = DemoUser
   override implicit val executionContext = play.api.libs.concurrent.Execution.defaultContext
   override lazy val routes = new CustomRoutesService()

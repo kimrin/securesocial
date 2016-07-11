@@ -18,7 +18,7 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
-import play.api.Application
+import play.api.{ Configuration, Application }
 import play.filters.csrf.CSRFAddToken
 import securesocial.core._
 import securesocial.core.providers.UsernamePasswordProvider
@@ -31,7 +31,7 @@ import scala.concurrent.Future
  *
  * @param env An environment
  */
-class LoginPage @Inject() (override implicit val env: RuntimeEnvironment) extends BaseLoginPage
+class LoginPage @Inject() (override implicit val env: RuntimeEnvironment, override val configuration: Configuration) extends BaseLoginPage
 
 /**
  * The trait that defines the login page controller

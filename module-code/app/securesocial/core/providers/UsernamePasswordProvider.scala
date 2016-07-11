@@ -20,6 +20,7 @@ import javax.inject.Inject
 
 import org.joda.time.DateTime
 import play.Application
+import play.api.Configuration
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.mvc._
@@ -37,7 +38,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 class UsernamePasswordProvider[U](userService: UserService[U],
   avatarService: Option[AvatarService],
   viewTemplates: ViewTemplates,
-  passwordHashers: Map[String, PasswordHasher])(implicit val executionContext: ExecutionContext)
+  passwordHashers: Map[String, PasswordHasher])(implicit val executionContext: ExecutionContext, val configuration: Configuration)
     extends IdentityProvider with ApiSupport with Controller {
 
   override val id = UsernamePasswordProvider.UsernamePassword

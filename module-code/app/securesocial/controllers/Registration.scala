@@ -18,6 +18,7 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
+import play.api.Configuration
 import play.api.data.Forms._
 import play.api.data._
 import play.api.i18n.Messages

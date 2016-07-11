@@ -18,7 +18,7 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
-import play.api.Application
+import play.api.{ Configuration, Application }
 import play.api.data.Form
 import play.api.i18n.{ Lang, Messages }
 import play.api.mvc.RequestHeader
@@ -38,7 +38,7 @@ trait ViewTemplates {
   /**
    * Returns the html for the login page
    */
-  def getLoginPage(form: Form[(String, String)], msg: Option[String] = None)(implicit request: RequestHeader, lang: Lang): Html
+  def getLoginPage(form: Form[(String, String)], msg: Option[String] = None)(implicit request: RequestHeader, lang: Lang, configuration: Configuration): Html
 
   /**
    * Returns the html for the signup page
@@ -143,7 +143,7 @@ object ViewTemplates {
     implicit val implicitEnv = env
 
     override def getLoginPage(form: Form[(String, String)],
-      msg: Option[String] = None)(implicit request: RequestHeader, lang: Lang): Html = {
+      msg: Option[String] = None)(implicit request: RequestHeader, lang: Lang, configuration: Configuration): Html = {
       securesocial.views.html.login(form, msg)
     }
 

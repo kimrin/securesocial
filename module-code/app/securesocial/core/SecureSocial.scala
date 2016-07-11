@@ -18,7 +18,7 @@ package securesocial.core
 
 import javax.inject.Inject
 
-import play.api.Application
+import play.api.{ Configuration, Application }
 import play.api.http.HeaderNames
 import play.api.i18n.{ Messages, I18nSupport, MessagesApi }
 import play.api.libs.json.Json
@@ -37,6 +37,9 @@ import scala.concurrent.{ ExecutionContext, Future }
  */
 trait SecureSocial extends Controller with I18nSupport {
   import SecureSocial._
+
+  implicit val configuration: Configuration = null
+
   implicit val env: RuntimeEnvironment
 
   implicit def executionContext: ExecutionContext = env.executionContext
