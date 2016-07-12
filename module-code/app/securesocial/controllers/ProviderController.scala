@@ -75,7 +75,7 @@ trait BaseProviderController extends SecureSocial {
   private def builder() = {
 
     //todo: this should be configurable maybe
-    env.authenticatorService.find(CookieAuthenticator.Id).getOrElse {
+    env.authenticatorService.find(env.cookieAuthenticatorConfigurations.Id).getOrElse {
       logger.error(s"[securesocial] missing CookieAuthenticatorBuilder")
       throw new AuthenticationException()
     }

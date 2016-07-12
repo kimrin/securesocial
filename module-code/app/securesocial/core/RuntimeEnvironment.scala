@@ -39,6 +39,8 @@ trait RuntimeEnvironment {
 
   def idGenerator: IdGenerator
   def authenticatorService: AuthenticatorService[U]
+  def cookieAuthenticatorConfigurations: CookieAuthenticatorConfigurations
+  def httpHeaderAuthenticatorConfigurations: HttpHeaderAuthenticatorConfigurations
 
   def eventListeners: Seq[EventListener]
 
@@ -124,8 +126,8 @@ object RuntimeEnvironment {
     override lazy val idGenerator: IdGenerator = new IdGenerator.Default()
 
     override lazy val authenticatorService = new AuthenticatorService(
-      new CookieAuthenticatorBuilder[U](new AuthenticatorStore.Default(cacheService), idGenerator),
-      new HttpHeaderAuthenticatorBuilder[U](new AuthenticatorStore.Default(cacheService), idGenerator)
+      new CookieAuthenticatorBuilder[U](new AuthenticatorStore.Default(cacheService), idGenerator, cookieAuthenticatorConfigurations),
+      new HttpHeaderAuthenticatorBuilder[U](new AuthenticatorStore.Default(cacheService), idGenerator, httpHeaderAuthenticatorConfigurations)
     )
 
     override lazy val eventListeners: Seq[EventListener] = Seq()

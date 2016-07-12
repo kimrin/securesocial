@@ -199,7 +199,7 @@ trait BaseRegistration extends MailTokenBasedOperations {
                     env.mailer.sendWelcomeEmail(newUser)
                   val eventSession = Events.fire(new SignUpEvent(saved)).getOrElse(request.session)
                   if (UsernamePasswordProvider.signupSkipLogin) {
-                    env.authenticatorService.find(CookieAuthenticator.Id).map {
+                    env.authenticatorService.find(env.cookieAuthenticatorConfigurations.Id).map {
                       _.fromUser(saved).flatMap { authenticator =>
                         confirmationResult()
                           .flashing(Success -> Messages(SignUpDone))
