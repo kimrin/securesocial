@@ -37,7 +37,7 @@ public class DefaultSecuredActionResponses extends Controller implements Secured
     play.api.i18n.Messages messages = null;
 
     public Html notAuthorizedPage(Http.Context ctx) {
-        return securesocial.views.html.notAuthorized.render(ctx._requestHeader(), ctx.lang(), SecureSocial.env());
+        return securesocial.views.html.notAuthorized.render(ctx._requestHeader(), ctx.lang(), SecureSocial.env(), messages);
     }
 
     public CompletionStage<Result> notAuthenticatedResult(Http.Context ctx) {
