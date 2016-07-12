@@ -16,9 +16,7 @@
  */
 package securesocial.core.services
 
-import javax.inject.Inject
-
-import play.api.Application
+import play.api.Configuration
 import play.api.mvc.{ Call, RequestHeader }
 import securesocial.core.IdentityProvider
 
@@ -99,6 +97,8 @@ trait RoutesService {
   def bootstrapCssPath: Call
 
   def customCssPath: Option[Call]
+
+  val configuration: Configuration
 }
 
 object RoutesService {
@@ -107,11 +107,8 @@ object RoutesService {
    * The default RoutesService implementation.  It points to the routes
    * defined by the built in controllers.
    */
-  class Default extends RoutesService {
+  class Default(implicit override val configuration: Configuration) extends RoutesService {
     private val logger = play.api.Logger("securesocial.core.DefaultRoutesService")
-    @Inject
-    implicit var application: Application = null
-    lazy val conf = application.configuration
 
     val FaviconKey = "securesocial.faviconPath"
     val JQueryKey = "securesocial.jqueryPath"
@@ -178,7 +175,7 @@ object RoutesService {
     }
 
     protected def valueFor(key: String, default: String) = {
-      val value = conf.getString(key).getOrElse(default)
+      val value = configuration.getString(key).getOrElse(default)
       logger.debug(s"[securesocial] $key = $value")
       securesocial.controllers.routes.Assets.at(value)
     }
@@ -209,7 +206,7 @@ object RoutesService {
      * @return Option containing a custom css file or None
      */
     override val customCssPath: Option[Call] = {
-      val path = conf.getString(CustomCssKey).map(securesocial.controllers.routes.Assets.at)
+      val path = configuration.getString(CustomCssKey).map(securesocial.controllers.routes.Assets.at)
       logger.debug("[securesocial] custom css path = %s".format(path))
       path
     }
