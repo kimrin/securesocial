@@ -1,6 +1,7 @@
 package securesocial.core
 
 import play.api.Configuration
+import play.api.cache.CacheApi
 import securesocial.controllers.{ MailTemplates, ViewTemplates }
 import securesocial.core.authenticator._
 import securesocial.core.providers._
@@ -19,6 +20,7 @@ trait RuntimeEnvironment {
   type U
 
   implicit val configuration: Configuration
+  implicit val cacheApi: CacheApi
 
   def routes: RoutesService
 
