@@ -16,12 +16,9 @@
  */
 package securesocial.core.authenticator
 
-import javax.inject.Inject
-
 import org.joda.time.DateTime
-import play.api.{ Configuration, Application }
+import play.api.{ Configuration, Environment }
 import play.api.mvc.{ Result, _ }
-import securesocial.core.authenticator.CookieAuthenticatorConfigurations.Default
 
 import scala.concurrent.Future
 
@@ -135,7 +132,7 @@ trait HttpHeaderAuthenticatorConfigurations extends StoreBackedAuthenticatorConf
 }
 
 object HttpHeaderAuthenticatorConfigurations {
-  class Default(implicit val configuration: Configuration) extends HttpHeaderAuthenticatorConfigurations {
+  class Default(implicit val configuration: Configuration, environment: Environment) extends HttpHeaderAuthenticatorConfigurations {
     lazy val headerName = configuration.getString(HeaderNameKey).getOrElse(DefaultHeaderName)
 
     private lazy val cookieAuthenticatorConfigurations: CookieAuthenticatorConfigurations = new CookieAuthenticatorConfigurations.Default()

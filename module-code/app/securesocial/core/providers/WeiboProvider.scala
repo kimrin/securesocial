@@ -18,6 +18,7 @@ package securesocial.core.providers
 
 import javax.inject.Inject
 
+import play.api.{ Environment, Configuration }
 import play.api.libs.ws.{ WSClient, WSResponse }
 import securesocial.core._
 import securesocial.core.services.{ CacheService, RoutesService }
@@ -30,7 +31,7 @@ import scala.concurrent.Future
  */
 class WeiboProvider(routesService: RoutesService,
   cacheService: CacheService,
-  client: OAuth2Client)
+  client: OAuth2Client)(implicit val configuration: Configuration, val playEnv: Environment)
     extends OAuth2Provider.Base(routesService, client, cacheService) {
 
   @Inject

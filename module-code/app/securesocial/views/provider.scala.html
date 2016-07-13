@@ -21,7 +21,7 @@
                     <fieldset>
                         @CSRF.formField
 
-                        @if( UsernamePasswordProvider.withUserNameSupport ) {
+                        @if( env.usernamePasswordProviderConfigurations.withUserNameSupport ) {
                             @helper.inputText(
                                 loginForm.get("username"),
                                 '_label -> Messages("securesocial.signup.username"),

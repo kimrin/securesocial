@@ -18,7 +18,7 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
-import play.api.Configuration
+import play.api.{ Environment, Configuration }
 import play.api.data.Forms._
 import play.api.data._
 import play.api.i18n.Messages
@@ -37,7 +37,7 @@ import scala.concurrent.{ Await, Future }
  *
  * @param env the environment
  */
-class Registration @Inject() (override implicit val env: RuntimeEnvironment) extends BaseRegistration
+class Registration @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment) extends BaseRegistration
 
 /**
  * A trait that provides the means to handle user registration
@@ -89,7 +89,7 @@ trait BaseRegistration extends MailTokenBasedOperations {
     (info => Some((info.firstName, info.lastName, ("", ""))))
   )
 
-  val form = if (UsernamePasswordProvider.withUserNameSupport) formWithUsername else formWithoutUsername
+  val form = if (env.usernamePasswordProviderConfigurations.withUserNameSupport) formWithUsername else formWithoutUsername
 
   @Inject
   implicit var CSRFAddToken: CSRFAddToken = null
@@ -100,7 +100,7 @@ trait BaseRegistration extends MailTokenBasedOperations {
   def startSignUp = CSRFAddToken {
     Action {
       implicit request =>
-        if (SecureSocial.enableRefererAsOriginalUrl) {
+        if (enableRefererAsOriginalUrl) {
           SecureSocial.withRefererAsOriginalUrl(Ok(env.viewTemplates.getStartSignUpPage(startForm)))
         } else {
           Ok(env.viewTemplates.getStartSignUpPage(startForm))
@@ -170,7 +170,7 @@ trait BaseRegistration extends MailTokenBasedOperations {
                 Future.successful(BadRequest(env.viewTemplates.getSignUpPage(errors, t.uuid)))
               },
               info => {
-                val id = if (UsernamePasswordProvider.withUserNameSupport) info.userName.get else t.email
+                val id = if (env.usernamePasswordProviderConfigurations.withUserNameSupport) info.userName.get else t.email
                 val newUser = BasicProfile(
                   providerId,
                   id,
@@ -195,10 +195,10 @@ trait BaseRegistration extends MailTokenBasedOperations {
                   saved <- env.userService.save(toSave, SaveMode.SignUp);
                   deleted <- env.userService.deleteToken(t.uuid)
                 ) yield {
-                  if (UsernamePasswordProvider.sendWelcomeEmail)
+                  if (env.usernamePasswordProviderConfigurations.sendWelcomeEmail)
                     env.mailer.sendWelcomeEmail(newUser)
                   val eventSession = Events.fire(new SignUpEvent(saved)).getOrElse(request.session)
-                  if (UsernamePasswordProvider.signupSkipLogin) {
+                  if (env.usernamePasswordProviderConfigurations.signupSkipLogin) {
                     env.authenticatorService.find(env.cookieAuthenticatorConfigurations.Id).map {
                       _.fromUser(saved).flatMap { authenticator =>
                         confirmationResult()

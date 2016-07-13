@@ -18,6 +18,7 @@ package securesocial.core.providers
 
 import org.joda.time.{ DateTime, Seconds }
 import org.joda.time.format.DateTimeFormat
+import play.api.{ Environment, Configuration }
 import play.api.http.HeaderNames
 import play.api.libs.ws.WSResponse
 import play.api.mvc.Request
@@ -42,7 +43,7 @@ import scala.xml.Node
  */
 class ConcurProvider(routesService: RoutesService,
   cacheService: CacheService,
-  client: OAuth2Client)
+  client: OAuth2Client)(implicit val configuration: Configuration, val playEnv: Environment)
     extends OAuth2Provider.Base(routesService, client, cacheService) {
   /** formatter used to parse the expiration date returned from Concur */
   private val ExpirationDateFormatter = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm:ss a")

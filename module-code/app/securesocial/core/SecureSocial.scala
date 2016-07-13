@@ -18,7 +18,7 @@ package securesocial.core
 
 import javax.inject.Inject
 
-import play.api.{ Configuration, Application }
+import play.api.{ Environment, Configuration, Application }
 import play.api.http.HeaderNames
 import play.api.i18n.{ Messages, I18nSupport, MessagesApi }
 import play.api.libs.json.Json
@@ -38,9 +38,11 @@ import scala.concurrent.{ ExecutionContext, Future }
 trait SecureSocial extends Controller with I18nSupport {
   import SecureSocial._
 
-  implicit val configuration: Configuration = null
+  implicit val configuration: Configuration
 
   implicit val env: RuntimeEnvironment
+
+  implicit val playEnv: Environment
 
   implicit def executionContext: ExecutionContext = env.executionContext
 
@@ -162,6 +164,9 @@ trait SecureSocial extends Controller with I18nSupport {
     }
   }
 
+  val enableRefererAsOriginalUrl = {
+    configuration.getBoolean("securesocial.enableRefererAsOriginalUrl").getOrElse(false)
+  }
 }
 
 object SecureSocial {
@@ -210,13 +215,6 @@ object SecureSocial {
       val refererUri = if (idxFirstSlash < 0) "/" else referer.substring(idxFirstSlash)
       refererUri
     }
-  }
-
-  @Inject
-  implicit var application: Application = null
-
-  val enableRefererAsOriginalUrl = {
-    application.configuration.getBoolean("securesocial.enableRefererAsOriginalUrl").getOrElse(false)
   }
 
   /**

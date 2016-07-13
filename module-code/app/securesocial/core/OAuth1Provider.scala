@@ -17,6 +17,7 @@
 package securesocial.core
 
 import _root_.java.util.UUID
+import play.api.{ Environment, Configuration }
 import play.api.libs.oauth._
 import play.api.mvc.{ AnyContent, Request }
 import play.api.mvc.Results.Redirect
@@ -74,33 +75,6 @@ object OAuth1Client {
   }
 }
 
-object ServiceInfoHelper {
-  import IdentityProvider._
-
-  /**
-   * A helper method to create a service info from the properties file
-   * @param id
-   * @return
-   */
-  def forProvider(id: String): ServiceInfo = {
-    val result = for {
-      requestTokenUrl <- loadProperty(id, OAuth1Provider.RequestTokenUrl);
-      accessTokenUrl <- loadProperty(id, OAuth1Provider.AccessTokenUrl);
-      authorizationUrl <- loadProperty(id, OAuth1Provider.AuthorizationUrl);
-      consumerKey <- loadProperty(id, OAuth1Provider.ConsumerKey);
-      consumerSecret <- loadProperty(id, OAuth1Provider.ConsumerSecret)
-    } yield {
-      ServiceInfo(requestTokenUrl, accessTokenUrl, authorizationUrl, ConsumerKey(consumerKey, consumerSecret))
-    }
-
-    if (result.isEmpty) {
-      throwMissingPropertiesException(id)
-    }
-    result.get
-
-  }
-}
-
 /**
  * Base class for all OAuth1 providers
  */
@@ -111,6 +85,9 @@ abstract class OAuth1Provider(
     extends IdentityProvider {
 
   protected implicit val executionContext = client.executionContext
+  protected implicit val playEnv: Environment
+  implicit private val implicitConf = configuration
+  protected implicit val identityProviderConfigurations = new IdentityProviderConfigurations.Default
   protected val logger = play.api.Logger(this.getClass.getName)
 
   def authMethod = AuthenticationMethod.OAuth1
@@ -177,4 +154,31 @@ object OAuth1Provider {
   val AuthorizationUrl = "authorizationUrl"
   val ConsumerKey = "consumerKey"
   val ConsumerSecret = "consumerSecret"
+}
+
+trait ServiceInfoHelper {
+  def forProvider(id: String): ServiceInfo
+}
+
+object ServiceInfoHelper {
+  class Default(implicit val configuration: Configuration, implicit val environment: Environment) extends ServiceInfoHelper {
+    implicit val identityProviderConfigurations = new IdentityProviderConfigurations.Default
+
+    def forProvider(id: String): ServiceInfo = {
+      val result = for {
+        requestTokenUrl <- identityProviderConfigurations.loadProperty(id, OAuth1Provider.RequestTokenUrl);
+        accessTokenUrl <- identityProviderConfigurations.loadProperty(id, OAuth1Provider.AccessTokenUrl);
+        authorizationUrl <- identityProviderConfigurations.loadProperty(id, OAuth1Provider.AuthorizationUrl);
+        consumerKey <- identityProviderConfigurations.loadProperty(id, OAuth1Provider.ConsumerKey);
+        consumerSecret <- identityProviderConfigurations.loadProperty(id, OAuth1Provider.ConsumerSecret)
+      } yield {
+        ServiceInfo(requestTokenUrl, accessTokenUrl, authorizationUrl, ConsumerKey(consumerKey, consumerSecret))
+      }
+
+      if (result.isEmpty) {
+        identityProviderConfigurations.throwMissingPropertiesException(id)
+      }
+      result.get
+    }
+  }
 }

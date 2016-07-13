@@ -18,6 +18,7 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
+import play.api.{ Configuration, Environment }
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.Messages
@@ -35,7 +36,7 @@ import scala.concurrent.Future
  *
  * @param env an environment
  */
-class PasswordReset @Inject() (override implicit val env: RuntimeEnvironment) extends BasePasswordReset
+class PasswordReset @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment) extends BasePasswordReset
 
 /**
  * The trait that provides the Password Reset functionality

@@ -18,7 +18,7 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
-import play.api.Application
+import play.api.{ Environment, Configuration, Application }
 import play.api.i18n.Messages
 import play.api.mvc._
 import securesocial.core._
@@ -31,7 +31,7 @@ import scala.concurrent.Future
 /**
  * A default controller that uses the BasicProfile as the user type
  */
-class ProviderController @Inject() (override implicit val env: RuntimeEnvironment)
+class ProviderController @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment)
   extends BaseProviderController
 
 /**
@@ -87,10 +87,12 @@ trait BaseProviderController extends SecureSocial {
    * @param miscParam
    */
   private def getProvider(provider: String, scope: Option[String], miscParam: Option[String]): Option[IdentityProvider] = {
+
+    val oauth2SettingsBuilder = new OAuth2SettingsBuilder.Default
     val settings = if (scope.isDefined) {
-      OAuth2Settings.forProvider(provider).copy(scope = scope)
+      oauth2SettingsBuilder.forProvider(provider).copy(scope = scope)
     } else {
-      OAuth2Settings.forProvider(provider)
+      oauth2SettingsBuilder.forProvider(provider)
     }
     Some(env.createProvider(provider, Some(settings), miscParam))
   }

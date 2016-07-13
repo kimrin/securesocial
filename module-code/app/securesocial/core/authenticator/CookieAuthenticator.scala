@@ -16,12 +16,10 @@
  */
 package securesocial.core.authenticator
 
-import javax.inject.Inject
-
 import org.joda.time.DateTime
-import play.api.{ Configuration, Application }
+import play.api.{ Configuration, Environment }
 import play.api.mvc.{ Cookie, DiscardingCookie, RequestHeader, Result }
-import securesocial.core.IdentityProvider
+import securesocial.core.{ IdentityProviderConfigurations, IdentityProvider }
 
 import scala.concurrent.Future
 
@@ -202,13 +200,14 @@ trait CookieAuthenticatorConfigurations extends StoreBackedAuthenticatorConfigur
 }
 
 object CookieAuthenticatorConfigurations {
-  class Default(implicit val configuration: Configuration) extends CookieAuthenticatorConfigurations {
+  class Default(implicit val configuration: Configuration, val playEnv: Environment) extends CookieAuthenticatorConfigurations {
+    private val identityProviderConfiguration = new IdentityProviderConfigurations.Default
     lazy val cookieName = configuration.getString(CookieNameKey).getOrElse(DefaultCookieName)
     lazy val cookiePath = configuration.getString(CookiePathKey).getOrElse(
       configuration.getString(ApplicationContext).getOrElse(DefaultCookiePath)
     )
     lazy val cookieDomain = configuration.getString(CookieDomainKey)
-    lazy val cookieSecure = IdentityProvider.sslEnabled
+    lazy val cookieSecure = identityProviderConfiguration.sslEnabled
     lazy val cookieHttpOnly = configuration.getBoolean(CookieHttpOnlyKey).getOrElse(DefaultCookieHttpOnly)
     lazy val idleTimeout = configuration.getInt(IdleTimeoutKey).getOrElse(DefaultIdleTimeout)
     lazy val absoluteTimeout = configuration.getInt(AbsoluteTimeoutKey).getOrElse(DefaultAbsoluteTimeout)

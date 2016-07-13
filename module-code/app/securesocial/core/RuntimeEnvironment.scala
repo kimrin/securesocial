@@ -1,6 +1,6 @@
 package securesocial.core
 
-import play.api.Configuration
+import play.api.{ Configuration, Environment }
 import play.api.cache.CacheApi
 import securesocial.controllers.{ MailTemplates, ViewTemplates }
 import securesocial.core.authenticator._
@@ -21,6 +21,7 @@ trait RuntimeEnvironment {
 
   implicit val configuration: Configuration
   implicit val cacheApi: CacheApi
+  implicit val playEnv: Environment
 
   def routes: RoutesService
 
@@ -43,6 +44,9 @@ trait RuntimeEnvironment {
   def authenticatorService: AuthenticatorService[U]
   def cookieAuthenticatorConfigurations: CookieAuthenticatorConfigurations
   def httpHeaderAuthenticatorConfigurations: HttpHeaderAuthenticatorConfigurations
+  // def identityProviderConfigurations: IdentityProviderConfigurations
+  def serviceInfoHelper: ServiceInfoHelper
+  def usernamePasswordProviderConfigurations: UsernamePasswordProviderConfigurations
 
   def eventListeners: Seq[EventListener]
 
@@ -98,9 +102,10 @@ trait RuntimeEnvironment {
     }
   }
 
-  protected def oauth1ClientFor(provider: String) = new OAuth1Client.Default(ServiceInfoHelper.forProvider(provider), httpService)
+  protected def oauth1ClientFor(provider: String) = new OAuth1Client.Default(serviceInfoHelper.forProvider(provider), httpService)
   protected def oauth2ClientFor(provider: String, customSettings: Option[OAuth2Settings] = None): OAuth2Client = {
-    val settings = customSettings.getOrElse(OAuth2Settings.forProvider(provider))
+    val oauth2SettingsBuilder = new OAuth2SettingsBuilder.Default
+    val settings = customSettings.getOrElse(oauth2SettingsBuilder.forProvider(provider))
     new OAuth2Client.Default(httpService, settings)
   }
 }

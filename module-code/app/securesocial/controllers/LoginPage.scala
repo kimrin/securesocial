@@ -18,7 +18,7 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
-import play.api.{ Configuration, Application }
+import play.api.{ Configuration, Application, Environment }
 import play.filters.csrf.CSRFAddToken
 import securesocial.core._
 import securesocial.core.providers.UsernamePasswordProvider
@@ -31,7 +31,7 @@ import scala.concurrent.Future
  *
  * @param env An environment
  */
-class LoginPage @Inject() (override implicit val env: RuntimeEnvironment, override val configuration: Configuration) extends BaseLoginPage
+class LoginPage @Inject() (override implicit val env: RuntimeEnvironment, override val configuration: Configuration, override val playEnv: Environment) extends BaseLoginPage
 
 /**
  * The trait that defines the login page controller
@@ -58,7 +58,7 @@ trait BaseLoginPage extends SecureSocial {
         // if the user is already logged in, a referer is set and we handle the
         // referer the same way as an OriginalUrl in the session, we redirect back
         // to this URL. Otherwise, just redirect to the application's landing page
-        val to = (if (SecureSocial.enableRefererAsOriginalUrl) {
+        val to = (if (enableRefererAsOriginalUrl) {
           SecureSocial.refererPathAndQuery
         } else {
           None
@@ -66,7 +66,7 @@ trait BaseLoginPage extends SecureSocial {
         logger.debug("User already logged in, skipping login page. Redirecting to %s".format(to))
         Redirect(to)
       } else {
-        if (SecureSocial.enableRefererAsOriginalUrl) {
+        if (enableRefererAsOriginalUrl) {
           SecureSocial.withRefererAsOriginalUrl(Ok(env.viewTemplates.getLoginPage(UsernamePasswordProvider.loginForm)))
         } else {
           Ok(env.viewTemplates.getLoginPage(UsernamePasswordProvider.loginForm))

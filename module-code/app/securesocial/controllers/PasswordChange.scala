@@ -18,7 +18,7 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
-import play.api.Application
+import play.api.{ Configuration, Application, Environment }
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.Messages
@@ -35,7 +35,7 @@ import scala.concurrent.{ Await, Future }
  *
  * @param env An environment
  */
-class PasswordChange @Inject() (override implicit val env: RuntimeEnvironment) extends BasePasswordChange
+class PasswordChange @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment) extends BasePasswordChange
 
 /**
  * A trait that defines the password change functionality

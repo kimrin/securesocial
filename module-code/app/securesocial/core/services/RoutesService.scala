@@ -16,9 +16,9 @@
  */
 package securesocial.core.services
 
-import play.api.Configuration
+import play.api.{ Configuration, Environment }
 import play.api.mvc.{ Call, RequestHeader }
-import securesocial.core.IdentityProvider
+import securesocial.core.{ IdentityProviderConfigurations, IdentityProvider }
 
 /**
  * A RoutesService that resolves the routes for some of the pages
@@ -107,8 +107,9 @@ object RoutesService {
    * The default RoutesService implementation.  It points to the routes
    * defined by the built in controllers.
    */
-  class Default(implicit override val configuration: Configuration) extends RoutesService {
+  class Default(implicit override val configuration: Configuration, val playEnv: Environment) extends RoutesService {
     private val logger = play.api.Logger("securesocial.core.DefaultRoutesService")
+    protected implicit val identityProviderConfigurations: IdentityProviderConfigurations = new IdentityProviderConfigurations.Default
 
     val FaviconKey = "securesocial.faviconPath"
     val JQueryKey = "securesocial.jqueryPath"
@@ -119,7 +120,7 @@ object RoutesService {
     val DefaultBootstrapCssPath = "bootstrap/css/bootstrap.min.css"
 
     protected def absoluteUrl(call: Call)(implicit req: RequestHeader): String = {
-      call.absoluteURL(IdentityProvider.sslEnabled)
+      call.absoluteURL(identityProviderConfigurations.sslEnabled)
     }
 
     override def loginPageUrl(implicit req: RequestHeader): String = {
