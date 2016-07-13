@@ -20,20 +20,23 @@ import javax.inject.Inject
 
 import securesocial.core._
 import service.{ MyEnvironment, MyEventListener, DemoUser }
+import play.api.{ Configuration, Environment }
 import play.api.mvc.{ Action, RequestHeader }
 
-class Application @Inject() (override implicit val env: MyEnvironment) extends securesocial.core.SecureSocial {
+class Application @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment) extends securesocial.core.SecureSocial {
   def index = SecuredAction { implicit request =>
-    Ok(views.html.index(request.user.main))
+    Ok(views.html.index(request.user.asInstanceOf[DemoUser].main))
   }
 
   // a sample action using an authorization implementation
-  def onlyTwitter = SecuredAction(WithProvider("twitter")) { implicit request =>
+  //TODO This doesn't compile, so comment it out for now.
+  // def onlyTwitter = SecuredAction(WithProvider("twitter")) { implicit request =>
+  def onlyTwitter = SecuredAction() { implicit request =>
     Ok("You can see this because you logged in using Twitter")
   }
 
   def linkResult = SecuredAction { implicit request =>
-    Ok(views.html.linkResult(request.user))
+    Ok(views.html.linkResult(request.user.asInstanceOf[DemoUser]))
   }
 
   /**
@@ -41,7 +44,7 @@ class Application @Inject() (override implicit val env: MyEnvironment) extends s
    */
   def currentUser = Action.async { implicit request =>
     SecureSocial.currentUser.map { maybeUser =>
-      val userId = maybeUser.map(_.main.userId).getOrElse("unknown")
+      val userId = maybeUser.map(_.asInstanceOf[DemoUser].main.userId).getOrElse("unknown")
       Ok(s"Your id is $userId")
     }
   }

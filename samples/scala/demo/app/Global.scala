@@ -16,16 +16,18 @@
  */
 
 import controllers.CustomRoutesService
-import play.api.Configuration
+import play.api.libs.oauth.ServiceInfo
+import play.api.{ Configuration, Environment }
 import play.api.cache.CacheApi
-import securesocial.core.RuntimeEnvironment
+import securesocial.core.providers.UsernamePasswordProviderConfigurations
+import securesocial.core.{ ServiceInfoHelper, RuntimeEnvironment }
 import securesocial.core.authenticator.{ HttpHeaderAuthenticatorConfigurations, CookieAuthenticatorConfigurations }
 import service.{ DemoUser, InMemoryUserService, MyEventListener }
 
 /**
  * The runtime environment for this sample app.
  */
-class MyRuntimeEnvironment(implicit val configuration: Configuration, implicit val cacheApi: CacheApi) extends RuntimeEnvironment.Default {
+class MyRuntimeEnvironment(implicit val configuration: Configuration, val playEnv: Environment, val cacheApi: CacheApi) extends RuntimeEnvironment.Default {
   type U = DemoUser
   override implicit val executionContext = play.api.libs.concurrent.Execution.defaultContext
   override lazy val routes = new CustomRoutesService()
@@ -33,6 +35,8 @@ class MyRuntimeEnvironment(implicit val configuration: Configuration, implicit v
   override lazy val eventListeners = List(new MyEventListener())
   override val cookieAuthenticatorConfigurations = new CookieAuthenticatorConfigurations.Default()
   override val httpHeaderAuthenticatorConfigurations = new HttpHeaderAuthenticatorConfigurations.Default()
+  val serviceInfoHelper = new ServiceInfoHelper.Default
+  val usernamePasswordProviderConfigurations = new UsernamePasswordProviderConfigurations.Default
 }
 
 /**

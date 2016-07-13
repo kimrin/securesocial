@@ -19,12 +19,13 @@ package service
 
 import com.google.inject.{ Inject, Singleton }
 import controllers.CustomRoutesService
-import play.api.Configuration
+import play.api.{ Configuration, Environment }
 import play.api.cache.CacheApi
 import securesocial.core.authenticator.{ HttpHeaderAuthenticatorConfigurations, CookieAuthenticatorConfigurations }
-import securesocial.core.{ BasicProfile, RuntimeEnvironment }
+import securesocial.core.providers.UsernamePasswordProviderConfigurations
+import securesocial.core.{ ServiceInfoHelper, BasicProfile, RuntimeEnvironment }
 
-class MyEnvironment @Inject() ()(implicit val configuration: Configuration, implicit val cacheApi: CacheApi) extends RuntimeEnvironment.Default {
+class MyEnvironment @Inject() ()(implicit val configuration: Configuration, implicit val playEnv: Environment, val cacheApi: CacheApi) extends RuntimeEnvironment.Default {
   override type U = DemoUser
   override implicit val executionContext = play.api.libs.concurrent.Execution.defaultContext
   override lazy val routes = new CustomRoutesService()
@@ -32,6 +33,8 @@ class MyEnvironment @Inject() ()(implicit val configuration: Configuration, impl
   override lazy val eventListeners = List(new MyEventListener())
   override val cookieAuthenticatorConfigurations = new CookieAuthenticatorConfigurations.Default()
   override val httpHeaderAuthenticatorConfigurations = new HttpHeaderAuthenticatorConfigurations.Default()
+  val serviceInfoHelper = new ServiceInfoHelper.Default
+  val usernamePasswordProviderConfigurations = new UsernamePasswordProviderConfigurations.Default
 }
 
 /*
