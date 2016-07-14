@@ -37,7 +37,7 @@ import scala.concurrent.{ Await, Future }
  *
  * @param env the environment
  */
-class Registration @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment) extends BaseRegistration
+class Registration @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment, val CSRFAddToken: CSRFAddToken, val CSRFCheck: CSRFCheck) extends BaseRegistration
 
 /**
  * A trait that provides the means to handle user registration
@@ -91,8 +91,7 @@ trait BaseRegistration extends MailTokenBasedOperations {
 
   val form = if (env.usernamePasswordProviderConfigurations.withUserNameSupport) formWithUsername else formWithoutUsername
 
-  @Inject
-  implicit var CSRFAddToken: CSRFAddToken = null
+  implicit val CSRFAddToken: CSRFAddToken
 
   /**
    * Starts the sign up process
@@ -108,8 +107,7 @@ trait BaseRegistration extends MailTokenBasedOperations {
     }
   }
 
-  @Inject
-  implicit var CSRFCheck: CSRFCheck = null
+  implicit val CSRFCheck: CSRFCheck
 
   def handleStartSignUp = CSRFCheck {
     Action.async {

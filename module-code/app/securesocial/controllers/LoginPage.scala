@@ -31,7 +31,7 @@ import scala.concurrent.Future
  *
  * @param env An environment
  */
-class LoginPage @Inject() (override implicit val env: RuntimeEnvironment, override val configuration: Configuration, override val playEnv: Environment) extends BaseLoginPage
+class LoginPage @Inject() (override implicit val env: RuntimeEnvironment, override val configuration: Configuration, override val playEnv: Environment, val CSRFAddToken: CSRFAddToken) extends BaseLoginPage
 
 /**
  * The trait that defines the login page controller
@@ -44,8 +44,7 @@ trait BaseLoginPage extends SecureSocial {
    */
   val onLogoutGoTo = "securesocial.onLogoutGoTo"
 
-  @Inject
-  implicit var CSRFAddToken: CSRFAddToken = null
+  implicit val CSRFAddToken: CSRFAddToken
 
   /**
    * Renders the login page
@@ -75,9 +74,6 @@ trait BaseLoginPage extends SecureSocial {
     }
   }
 
-  @Inject
-  var application: Application = null
-
   /**
    * Logs out the user by clearing the credentials from the session.
    * The browser is redirected either to the login page or to the page specified in the onLogoutGoTo property.
@@ -86,7 +82,7 @@ trait BaseLoginPage extends SecureSocial {
    */
   def logout = UserAwareAction.async {
     implicit request =>
-      val redirectTo = Redirect(application.configuration.getString(onLogoutGoTo).getOrElse(env.routes.loginPageUrl))
+      val redirectTo = Redirect(configuration.getString(onLogoutGoTo).getOrElse(env.routes.loginPageUrl))
       val result = for {
         user <- request.user
         authenticator <- request.authenticator

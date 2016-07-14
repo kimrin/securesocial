@@ -36,7 +36,7 @@ import scala.concurrent.Future
  *
  * @param env an environment
  */
-class PasswordReset @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment) extends BasePasswordReset
+class PasswordReset @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment, val CSRFAddToken: CSRFAddToken, val CSRFCheck: CSRFCheck) extends BasePasswordReset
 
 /**
  * The trait that provides the Password Reset functionality
@@ -56,8 +56,7 @@ trait BasePasswordReset extends MailTokenBasedOperations {
       ).verifying(Messages(BaseRegistration.PasswordsDoNotMatch), passwords => passwords._1 == passwords._2)
   )
 
-  @Inject
-  implicit var CSRFAddToken: CSRFAddToken = null
+  implicit val CSRFAddToken: CSRFAddToken
 
   /**
    * Renders the page that starts the password reset flow
@@ -69,8 +68,7 @@ trait BasePasswordReset extends MailTokenBasedOperations {
     }
   }
 
-  @Inject
-  implicit var CSRFCheck: CSRFCheck = null
+  implicit val CSRFCheck: CSRFCheck
 
   /**
    * Handles form submission for the start page

@@ -35,7 +35,7 @@ import scala.concurrent.{ Await, Future }
  *
  * @param env An environment
  */
-class PasswordChange @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment) extends BasePasswordChange
+class PasswordChange @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment, val CSRFAddToken: CSRFAddToken, val CSRFCheck: CSRFCheck) extends BasePasswordChange
 
 /**
  * A trait that defines the password change functionality
@@ -104,8 +104,7 @@ trait BasePasswordChange extends SecureSocial {
     }
   }
 
-  @Inject
-  implicit var CSRFAddToken: CSRFAddToken = null
+  implicit val CSRFAddToken: CSRFAddToken
 
   /**
    * Renders the password change page
@@ -122,8 +121,7 @@ trait BasePasswordChange extends SecureSocial {
     }
   }
 
-  @Inject
-  implicit var CSRFCheck: CSRFCheck = null
+  implicit val CSRFCheck: CSRFCheck
 
   /**
    * Handles form submission from the password change page
