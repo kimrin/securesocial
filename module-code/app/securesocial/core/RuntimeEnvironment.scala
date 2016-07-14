@@ -1,5 +1,6 @@
 package securesocial.core
 
+import akka.actor.ActorSystem
 import play.api.i18n.{ MessagesApi, Messages }
 import play.api.libs.mailer.MailerClient
 import play.api.libs.ws.WSClient
@@ -27,6 +28,7 @@ trait RuntimeEnvironment {
   implicit val messagesApi: MessagesApi
   implicit val WS: WSClient
   implicit val mailerClient: MailerClient
+  implicit val actorSystem: ActorSystem
 
   def routes: RoutesService
 

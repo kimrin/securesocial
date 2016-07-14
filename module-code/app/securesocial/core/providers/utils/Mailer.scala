@@ -54,7 +54,7 @@ object Mailer {
    *
    * @param mailTemplates the mail templates
    */
-  class Default(mailTemplates: MailTemplates)(implicit val configuration: Configuration, val messagesApi: MessagesApi, val mailerClient: MailerClient) extends Mailer {
+  class Default(mailTemplates: MailTemplates)(implicit val configuration: Configuration, val messagesApi: MessagesApi, val mailerClient: MailerClient, val actorSystem: ActorSystem) extends Mailer {
     private val logger = play.api.Logger("securesocial.core.providers.utils.Mailer.Default")
     val fromAddress = configuration.getString("play.mailer.from").get
     val AlreadyRegisteredSubject = "mails.sendAlreadyRegisteredEmail.subject"
@@ -109,9 +109,6 @@ object Mailer {
 
       logger.debug(s"[securesocial] sending email to $recipient")
       logger.debug(s"[securesocial] mail = [$body]")
-
-      @Inject
-      implicit var actorSystem: ActorSystem = null
 
       actorSystem.scheduler.scheduleOnce(1.seconds) {
         val mail = Email(subject, fromAddress, Seq(recipient), body._1.map(txt => txt.body), body._2.map(html => html.body))

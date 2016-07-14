@@ -15,6 +15,7 @@
  *
  */
 
+import akka.actor.ActorSystem
 import controllers.CustomRoutesService
 import play.api.i18n.{ MessagesApi, Messages }
 import play.api.libs.mailer.MailerClient
@@ -31,7 +32,7 @@ import service.{ DemoUser, InMemoryUserService, MyEventListener }
 /**
  * The runtime environment for this sample app.
  */
-class MyRuntimeEnvironment(implicit val configuration: Configuration, val playEnv: Environment, val cacheApi: CacheApi, val messagesApi: MessagesApi, val WS: WSClient, val mailerClient: MailerClient) extends RuntimeEnvironment.Default {
+class MyRuntimeEnvironment(implicit val configuration: Configuration, val playEnv: Environment, val cacheApi: CacheApi, val messagesApi: MessagesApi, val WS: WSClient, val mailerClient: MailerClient, val actorSystem: ActorSystem) extends RuntimeEnvironment.Default {
   type U = DemoUser
   override implicit val executionContext = play.api.libs.concurrent.Execution.defaultContext
   override lazy val routes = new CustomRoutesService()
