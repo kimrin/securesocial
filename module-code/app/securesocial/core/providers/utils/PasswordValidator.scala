@@ -18,7 +18,7 @@ package securesocial.core.providers.utils
 
 import javax.inject.Inject
 
-import play.api.Application
+import play.api.{ Configuration, Application }
 import play.api.data.validation.{ Constraint, Invalid, Valid }
 import securesocial.core.RuntimeEnvironment
 
@@ -55,10 +55,8 @@ object PasswordValidator {
    * The minimum length can be configured setting a minimumPasswordLength property for userpass.
    * Defaults to 8 if not specified.
    */
-  class Default extends PasswordValidator {
-    @Inject
-    implicit var application: Application = null
-    val requiredLength = application.configuration.getInt(Default.PasswordLengthProperty).getOrElse(Default.Length)
+  class Default()(implicit val configuration: Configuration) extends PasswordValidator {
+    val requiredLength = configuration.getInt(Default.PasswordLengthProperty).getOrElse(Default.Length)
 
     override def validate(password: String): Either[(String, Seq[Any]), Unit] = {
       if (password.length >= requiredLength) {

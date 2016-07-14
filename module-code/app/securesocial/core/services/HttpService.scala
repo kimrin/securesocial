@@ -40,8 +40,6 @@ object HttpService {
    */
   class Default(implicit val executionContext: ExecutionContext) extends HttpService {
     @Inject
-    implicit var application: Application = null
-    @Inject
     implicit var WS: WSClient = null
 
     import play.api.libs.ws.WSRequest

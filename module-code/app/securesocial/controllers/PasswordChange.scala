@@ -56,10 +56,8 @@ trait BasePasswordChange extends SecureSocial {
    */
   val onPasswordChangeGoTo = "securesocial.onPasswordChangeGoTo"
 
-  @Inject
-  implicit var application: Application = null
   /** The redirect target of the handlePasswordChange action. */
-  def onHandlePasswordChangeGoTo = application.configuration.getString(onPasswordChangeGoTo).getOrElse(
+  def onHandlePasswordChangeGoTo = configuration.getString(onPasswordChangeGoTo).getOrElse(
     securesocial.controllers.routes.PasswordChange.page().url
   )
 

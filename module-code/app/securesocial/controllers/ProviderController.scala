@@ -191,12 +191,9 @@ object ProviderControllerHelper {
    *
    * @return
    */
-  def landingUrl = application.configuration.getString(onLoginGoTo).getOrElse(
-    application.configuration.getString(ApplicationContext).getOrElse(Root)
+  def landingUrl(implicit configuration: Configuration) = configuration.getString(onLoginGoTo).getOrElse(
+    configuration.getString(ApplicationContext).getOrElse(Root)
   )
-
-  @Inject
-  implicit var application: Application = null
 
   /**
    * Returns the url that the user should be redirected to after login
@@ -204,5 +201,5 @@ object ProviderControllerHelper {
    * @param session
    * @return
    */
-  def toUrl(session: Session) = session.get(SecureSocial.OriginalUrlKey).getOrElse(ProviderControllerHelper.landingUrl)
+  def toUrl(session: Session)(implicit configuration: Configuration) = session.get(SecureSocial.OriginalUrlKey).getOrElse(ProviderControllerHelper.landingUrl)
 }

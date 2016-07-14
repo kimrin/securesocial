@@ -1,5 +1,6 @@
 package securesocial.core
 
+import play.api.i18n.{ MessagesApi, Messages }
 import play.api.{ Configuration, Environment }
 import play.api.cache.CacheApi
 import securesocial.controllers.{ MailTemplates, ViewTemplates }
@@ -9,7 +10,6 @@ import securesocial.core.providers.utils.{ Mailer, PasswordHasher, PasswordValid
 import securesocial.core.services._
 
 import scala.concurrent.ExecutionContext
-import scala.collection.immutable.ListMap
 
 import play.api.libs.concurrent.{ Execution => PlayExecution }
 /**
@@ -22,6 +22,7 @@ trait RuntimeEnvironment {
   implicit val configuration: Configuration
   implicit val cacheApi: CacheApi
   implicit val playEnv: Environment
+  implicit val messagesApi: MessagesApi
 
   def routes: RoutesService
 

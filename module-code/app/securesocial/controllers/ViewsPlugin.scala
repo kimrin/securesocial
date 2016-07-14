@@ -16,11 +16,9 @@
  */
 package securesocial.controllers
 
-import javax.inject.Inject
-
-import play.api.{ Configuration, Application }
+import play.api.Configuration
 import play.api.data.Form
-import play.api.i18n.{ Lang, Messages }
+import play.api.i18n.{ MessagesApi, Lang, Messages }
 import play.api.mvc.RequestHeader
 import play.twirl.api.{ Html, Txt }
 import securesocial.core.{ BasicProfile, RuntimeEnvironment }
@@ -63,7 +61,7 @@ trait ViewTemplates {
   /**
    * Returns the html for the change password page
    */
-  def getPasswordChangePage(form: Form[ChangeInfo])(implicit request: RequestHeader, lang: Lang): Html
+  def getPasswordChangePage(form: Form[ChangeInfo])(implicit request: RequestHeader, lang: Lang, configuration: Configuration): Html
 
   /**
    * Returns the html for the not authorized page
@@ -133,44 +131,45 @@ trait MailTemplates {
 }
 
 object ViewTemplates {
-  @Inject
-  implicit var application: Application = null
-
   /**
    * The default views.
    */
-  class Default(env: RuntimeEnvironment) extends ViewTemplates {
+  class Default(env: RuntimeEnvironment)(implicit val messagesApi: MessagesApi, configuration: Configuration) extends ViewTemplates {
     implicit val implicitEnv = env
 
     override def getLoginPage(form: Form[(String, String)],
       msg: Option[String] = None)(implicit request: RequestHeader, lang: Lang, configuration: Configuration): Html = {
+      implicit val messages = messagesApi.preferred(request)
       securesocial.views.html.login(form, msg)
     }
 
     override def getSignUpPage(form: Form[RegistrationInfo], token: String)(implicit request: RequestHeader, lang: Lang): Html = {
+      implicit val messages = messagesApi.preferred(request)
       securesocial.views.html.Registration.signUp(form, token)
     }
 
     override def getStartSignUpPage(form: Form[String])(implicit request: RequestHeader, lang: Lang): Html = {
+      implicit val messages = messagesApi.preferred(request)
       securesocial.views.html.Registration.startSignUp(form)
     }
 
     override def getStartResetPasswordPage(form: Form[String])(implicit request: RequestHeader, lang: Lang): Html = {
+      implicit val messages = messagesApi.preferred(request)
       securesocial.views.html.Registration.startResetPassword(form)
     }
 
     override def getResetPasswordPage(form: Form[(String, String)], token: String)(implicit request: RequestHeader, lang: Lang): Html = {
+      implicit val messages = messagesApi.preferred(request)
       securesocial.views.html.Registration.resetPasswordPage(form, token)
     }
 
-    override def getPasswordChangePage(form: Form[ChangeInfo])(implicit request: RequestHeader, lang: Lang): Html = {
+    override def getPasswordChangePage(form: Form[ChangeInfo])(implicit request: RequestHeader, lang: Lang, configuration: Configuration): Html = {
+      implicit val messages = messagesApi.preferred(request)
       securesocial.views.html.passwordChange(form)
     }
 
-    @Inject
-    implicit var messages: Messages = null
-
     override def getNotAuthorizedPage(implicit request: RequestHeader, lang: Lang): Html = {
+      implicit val messages = messagesApi.preferred(request)
       securesocial.views.html.notAuthorized()
     }
   }

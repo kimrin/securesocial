@@ -41,9 +41,7 @@ abstract class MailTokenBasedOperations extends SecureSocial {
   val Email = "email"
   val TokenDurationKey = "securesocial.userpass.tokenDuration"
   val DefaultDuration = 60
-  @Inject
-  implicit var application: Application = null
-  val TokenDuration = application.configuration.getInt(TokenDurationKey).getOrElse(DefaultDuration)
+  val TokenDuration = configuration.getInt(TokenDurationKey).getOrElse(DefaultDuration)
 
   val startForm = Form(
     Email -> email.verifying(nonEmpty)
