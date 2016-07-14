@@ -1,6 +1,7 @@
 package securesocial.core
 
 import play.api.i18n.{ MessagesApi, Messages }
+import play.api.libs.ws.WSClient
 import play.api.{ Configuration, Environment }
 import play.api.cache.CacheApi
 import securesocial.controllers.{ MailTemplates, ViewTemplates }
@@ -23,6 +24,7 @@ trait RuntimeEnvironment {
   implicit val cacheApi: CacheApi
   implicit val playEnv: Environment
   implicit val messagesApi: MessagesApi
+  implicit val WS: WSClient
 
   def routes: RoutesService
 

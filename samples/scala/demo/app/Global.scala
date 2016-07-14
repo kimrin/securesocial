@@ -18,6 +18,7 @@
 import controllers.CustomRoutesService
 import play.api.i18n.{ MessagesApi, Messages }
 import play.api.libs.oauth.ServiceInfo
+import play.api.libs.ws.WSClient
 import play.api.mvc.RequestHeader
 import play.api.{ Configuration, Environment }
 import play.api.cache.CacheApi
@@ -29,7 +30,7 @@ import service.{ DemoUser, InMemoryUserService, MyEventListener }
 /**
  * The runtime environment for this sample app.
  */
-class MyRuntimeEnvironment(implicit val configuration: Configuration, val playEnv: Environment, val cacheApi: CacheApi, val messagesApi: MessagesApi) extends RuntimeEnvironment.Default {
+class MyRuntimeEnvironment(implicit val configuration: Configuration, val playEnv: Environment, val cacheApi: CacheApi, val messagesApi: MessagesApi, val WS: WSClient) extends RuntimeEnvironment.Default {
   type U = DemoUser
   override implicit val executionContext = play.api.libs.concurrent.Execution.defaultContext
   override lazy val routes = new CustomRoutesService()

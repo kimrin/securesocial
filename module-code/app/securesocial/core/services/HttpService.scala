@@ -38,9 +38,7 @@ object HttpService {
   /**
    * A default implementation for HttpService based on the Play WS client.
    */
-  class Default(implicit val executionContext: ExecutionContext) extends HttpService {
-    @Inject
-    implicit var WS: WSClient = null
+  class Default(implicit val executionContext: ExecutionContext, val WS: WSClient) extends HttpService {
 
     import play.api.libs.ws.WSRequest
 
