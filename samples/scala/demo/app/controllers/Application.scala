@@ -29,9 +29,7 @@ class Application @Inject() (implicit val env: RuntimeEnvironment, val configura
   }
 
   // a sample action using an authorization implementation
-  //TODO This doesn't compile, so comment it out for now.
-  // def onlyTwitter = SecuredAction(WithProvider("twitter")) { implicit request =>
-  def onlyTwitter = SecuredAction() { implicit request =>
+  def onlyTwitter = SecuredAction(WithProvider("twitter")) { implicit request =>
     Ok("You can see this because you logged in using Twitter")
   }
 
@@ -48,11 +46,12 @@ class Application @Inject() (implicit val env: RuntimeEnvironment, val configura
       Ok(s"Your id is $userId")
     }
   }
-}
 
-// An Authorization implementation that only authorizes uses that logged in using twitter
-case class WithProvider(provider: String) extends Authorization[DemoUser] {
-  def isAuthorized(user: DemoUser, request: RequestHeader) = {
-    user.main.providerId == provider
+  // An Authorization implementation that only authorizes uses that logged in using twitter
+  case class WithProvider(provider: String) extends Authorization[env.U] {
+    def isAuthorized(user: env.U, request: RequestHeader) = {
+      val demoUser = user.asInstanceOf[DemoUser]
+      demoUser.main.providerId == provider
+    }
   }
 }
