@@ -7,6 +7,21 @@ Below is the original README as of Mar 12, 2015:
 
 # Installation
 
+## Play! 2.5
+
+Add the dependencies:
+
+```
+"tv.kazu" %% "securesocial" % "3.2.0-SNAPSHOT"
+```
+
+You also need to add the sonatype snapshots repo to `resolvers`:
+
+```
+resolvers += Resolver.sonatypeRepo("snapshots")
+```
+
+
 ## Play! 2.3
 
 Add the dependencies:
