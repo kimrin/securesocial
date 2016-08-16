@@ -110,7 +110,8 @@ trait OAuth2Provider extends IdentityProvider with ApiSupport {
       (json \ OAuth2Constants.AccessToken).as[String],
       (json \ OAuth2Constants.TokenType).asOpt[String],
       (json \ OAuth2Constants.ExpiresIn).asOpt[Int],
-      (json \ OAuth2Constants.RefreshToken).asOpt[String]
+      (json \ OAuth2Constants.RefreshToken).asOpt[String],
+      (json \ OAuth2Constants.Scope).asOpt[String]
     )
   }
 
@@ -141,8 +142,8 @@ trait OAuth2Provider extends IdentityProvider with ApiSupport {
                   throw new AuthenticationException()
                 }
               };
-            accessToken <- getAccessToken(code) if stateOk;
-            user <- fillProfile(OAuth2Info(accessToken.accessToken, accessToken.tokenType, accessToken.expiresIn, accessToken.refreshToken))
+            oAuth2Info <- getAccessToken(code) if stateOk;
+            user <- fillProfile(oAuth2Info)
           ) yield {
             logger.debug(s"[securesocial] user loggedin using provider $id = $user")
             AuthenticationResult.Authenticated(user)
