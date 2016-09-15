@@ -43,7 +43,7 @@ case class CookieAuthenticator[U](id: String, user: U, expirationDate: DateTime,
   creationDate: DateTime,
   @transient store: AuthenticatorStore[CookieAuthenticator[U]],
   storeBackedAuthenticatorConfigurations: CookieAuthenticatorConfigurations)
-    extends StoreBackedAuthenticator[U, CookieAuthenticator[U]] {
+    extends StoreBackedAuthenticator[U, CookieAuthenticator[U]] with Serializable {
 
   @transient
   override val idleTimeoutInMinutes = storeBackedAuthenticatorConfigurations.idleTimeout
@@ -200,7 +200,7 @@ trait CookieAuthenticatorConfigurations extends StoreBackedAuthenticatorConfigur
 }
 
 object CookieAuthenticatorConfigurations {
-  class Default(implicit val configuration: Configuration, val playEnv: Environment) extends CookieAuthenticatorConfigurations {
+  class Default(implicit val configuration: Configuration, @transient val playEnv: Environment) extends CookieAuthenticatorConfigurations with Serializable {
     private val identityProviderConfiguration = new IdentityProviderConfigurations.Default
     lazy val cookieName = configuration.getString(CookieNameKey).getOrElse(DefaultCookieName)
     lazy val cookiePath = configuration.getString(CookiePathKey).getOrElse(

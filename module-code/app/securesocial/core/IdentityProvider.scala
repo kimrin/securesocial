@@ -86,7 +86,8 @@ trait IdentityProviderConfigurations {
 }
 
 object IdentityProviderConfigurations {
-  class Default(implicit val configuration: Configuration, implicit val environment: Environment) extends IdentityProviderConfigurations {
+  class Default(implicit val configuration: Configuration, @transient implicit val environment: Environment) extends IdentityProviderConfigurations with Serializable {
+    @transient
     private val logger = play.api.Logger("securesocial.core.IdentityProvider")
 
     // todo: do I want this here?
