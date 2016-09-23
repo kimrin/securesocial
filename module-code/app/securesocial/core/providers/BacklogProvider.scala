@@ -163,8 +163,8 @@ class BacklogProvider(
                 false
               }
             }
-            accessToken <- getAccessToken(code) if stateOk
-            user <- fillProfile(OAuth2Info(accessToken.accessToken, accessToken.tokenType, accessToken.expiresIn, accessToken.refreshToken))
+            oAuth2Info <- getAccessToken(code) if stateOk
+            user <- fillProfile(oAuth2Info)
           } yield {
             logger.debug(s"[securesocial] user loggedin using provider $id = $user")
             AuthenticationResult.Authenticated(user)
