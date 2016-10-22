@@ -23,6 +23,7 @@ import play.api.i18n.Messages
 import play.api.mvc._
 import securesocial.core._
 import securesocial.core.authenticator.CookieAuthenticator
+import securesocial.core.providers.UsernamePasswordProvider
 import securesocial.core.services.SaveMode
 import securesocial.core.utils._
 
@@ -86,15 +87,17 @@ trait BaseProviderController extends SecureSocial {
    * @param scope Pass Some[String] to ask for different scopes from those in securesocial.conf
    * @param miscParam
    */
-  private def getProvider(provider: String, scope: Option[String], miscParam: Option[String]): Option[IdentityProvider] = {
-
-    val oauth2SettingsBuilder = new OAuth2SettingsBuilder.Default
-    val settings = if (scope.isDefined) {
-      oauth2SettingsBuilder.forProvider(provider).copy(scope = scope)
-    } else {
-      oauth2SettingsBuilder.forProvider(provider)
-    }
-    Some(env.createProvider(provider, Some(settings), miscParam))
+  private def getProvider(provider: String, scope: Option[String], miscParam: Option[String]): Option[IdentityProvider] = provider match {
+    case UsernamePasswordProvider.UsernamePassword =>
+      Some(env.createProvider(provider, None, miscParam))
+    case _ =>
+      val oauth2SettingsBuilder = new OAuth2SettingsBuilder.Default
+      val settings = if (scope.isDefined) {
+        oauth2SettingsBuilder.forProvider(provider).copy(scope = scope)
+      } else {
+        oauth2SettingsBuilder.forProvider(provider)
+      }
+      Some(env.createProvider(provider, Some(settings), miscParam))
   }
 
   /**
