@@ -1,5 +1,11 @@
 package securesocial.core
 
+import akka.actor.ActorSystem
+import play.api.i18n.{ MessagesApi, Messages }
+import play.api.libs.mailer.MailerClient
+import play.api.libs.ws.WSClient
+import play.api.{ Configuration, Environment }
+import play.api.cache.CacheApi
 import securesocial.controllers.{ MailTemplates, ViewTemplates }
 import securesocial.core.authenticator._
 import securesocial.core.providers._
@@ -7,36 +13,51 @@ import securesocial.core.providers.utils.{ Mailer, PasswordHasher, PasswordValid
 import securesocial.core.services._
 
 import scala.concurrent.ExecutionContext
-import scala.collection.immutable.ListMap
 
 import play.api.libs.concurrent.{ Execution => PlayExecution }
 /**
  * A runtime environment where the services needed are available
  */
-trait RuntimeEnvironment[U] {
-  val routes: RoutesService
+trait RuntimeEnvironment {
 
-  val viewTemplates: ViewTemplates
-  val mailTemplates: MailTemplates
+  type U
 
-  val mailer: Mailer
+  implicit val configuration: Configuration
+  implicit val cacheApi: CacheApi
+  implicit val playEnv: Environment
+  implicit val messagesApi: MessagesApi
+  implicit val WS: WSClient
+  implicit val mailerClient: MailerClient
+  implicit val actorSystem: ActorSystem
 
-  val currentHasher: PasswordHasher
-  val passwordHashers: Map[String, PasswordHasher]
-  val passwordValidator: PasswordValidator
+  def routes: RoutesService
 
-  val httpService: HttpService
-  val cacheService: CacheService
-  val avatarService: Option[AvatarService]
+  def viewTemplates: ViewTemplates
+  def mailTemplates: MailTemplates
+
+  def mailer: Mailer
 
   val providerIds: List[String]
 
-  val idGenerator: IdGenerator
-  val authenticatorService: AuthenticatorService[U]
+  def currentHasher: PasswordHasher
+  def passwordHashers: Map[String, PasswordHasher]
+  def passwordValidator: PasswordValidator
 
-  val eventListeners: List[EventListener[U]]
+  def httpService: HttpService
+  def cacheService: CacheService
+  def avatarService: Option[AvatarService]
 
-  val userService: UserService[U]
+  def idGenerator: IdGenerator
+  def authenticatorService: AuthenticatorService[U]
+  def cookieAuthenticatorConfigurations: CookieAuthenticatorConfigurations
+  def httpHeaderAuthenticatorConfigurations: HttpHeaderAuthenticatorConfigurations
+  // def identityProviderConfigurations: IdentityProviderConfigurations
+  def serviceInfoHelper: ServiceInfoHelper
+  def usernamePasswordProviderConfigurations: UsernamePasswordProviderConfigurations
+
+  def eventListeners: Seq[EventListener]
+
+  def userService: UserService[U]
 
   implicit def executionContext: ExecutionContext
 
@@ -68,6 +89,8 @@ trait RuntimeEnvironment[U] {
         new DropboxProvider(routes, cacheService, oauth2ClientFor(DropboxProvider.Dropbox, customOAuth2Settings))
       case WeiboProvider.Weibo =>
         new WeiboProvider(routes, cacheService, oauth2ClientFor(WeiboProvider.Weibo, customOAuth2Settings))
+      case SpotifyProvider.Spotify =>
+        new SpotifyProvider(routes, cacheService, oauth2ClientFor(SpotifyProvider.Spotify, customOAuth2Settings))
       case SlackProvider.Slack =>
         new SlackProvider(routes, cacheService, oauth2ClientFor(SlackProvider.Slack, customOAuth2Settings))
       case BitbucketProvider.Bitbucket =>
@@ -86,9 +109,10 @@ trait RuntimeEnvironment[U] {
     }
   }
 
-  protected def oauth1ClientFor(provider: String) = new OAuth1Client.Default(ServiceInfoHelper.forProvider(provider), httpService)
+  protected def oauth1ClientFor(provider: String) = new OAuth1Client.Default(serviceInfoHelper.forProvider(provider), httpService)
   protected def oauth2ClientFor(provider: String, customSettings: Option[OAuth2Settings] = None): OAuth2Client = {
-    val settings = customSettings.getOrElse(OAuth2Settings.forProvider(provider))
+    val oauth2SettingsBuilder = new OAuth2SettingsBuilder.Default
+    val settings = customSettings.getOrElse(oauth2SettingsBuilder.forProvider(provider))
     new OAuth2Client.Default(httpService, settings)
   }
 }
@@ -99,7 +123,7 @@ object RuntimeEnvironment {
    * A default runtime environment.  All built in services are included.
    * You can start your app with with by only adding a userService to handle users.
    */
-  abstract class Default[U] extends RuntimeEnvironment[U] {
+  abstract class Default extends RuntimeEnvironment {
     override lazy val routes: RoutesService = new RoutesService.Default()
 
     override lazy val viewTemplates: ViewTemplates = new ViewTemplates.Default(this)
@@ -116,11 +140,11 @@ object RuntimeEnvironment {
     override lazy val idGenerator: IdGenerator = new IdGenerator.Default()
 
     override lazy val authenticatorService = new AuthenticatorService(
-      new CookieAuthenticatorBuilder[U](new AuthenticatorStore.Default(cacheService), idGenerator),
-      new HttpHeaderAuthenticatorBuilder[U](new AuthenticatorStore.Default(cacheService), idGenerator)
+      new CookieAuthenticatorBuilder[U](new AuthenticatorStore.Default(cacheService), idGenerator, cookieAuthenticatorConfigurations),
+      new HttpHeaderAuthenticatorBuilder[U](new AuthenticatorStore.Default(cacheService), idGenerator, httpHeaderAuthenticatorConfigurations)
     )
 
-    override lazy val eventListeners: List[EventListener[U]] = List()
+    override lazy val eventListeners: Seq[EventListener] = Seq()
     override implicit def executionContext: ExecutionContext =
       PlayExecution.defaultContext
 
@@ -136,6 +160,7 @@ object RuntimeEnvironment {
       DropboxProvider.Dropbox,
       WeiboProvider.Weibo,
       ConcurProvider.Concur,
+      SpotifyProvider.Spotify,
       SlackProvider.Slack,
       BitbucketProvider.Bitbucket,
       BacklogProvider.Backlog,

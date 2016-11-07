@@ -18,7 +18,10 @@
  */
 package securesocial.core.providers
 
-import play.api.libs.ws.WS
+import javax.inject.Inject
+
+import play.api.{ Environment, Configuration }
+import play.api.libs.ws.WSClient
 import securesocial.core._
 import securesocial.core.providers.DropboxProvider._
 import securesocial.core.services.{ CacheService, RoutesService }
@@ -30,13 +33,14 @@ import scala.concurrent.Future
  */
 class DropboxProvider(routesService: RoutesService,
   cacheService: CacheService,
-  client: OAuth2Client)
+  client: OAuth2Client)(implicit val configuration: Configuration, val playEnv: Environment)
     extends OAuth2Provider.Base(routesService, client, cacheService) {
+  @Inject
+  var WS: WSClient = null
   private val Logger = play.api.Logger("securesocial.core.providers.DropboxProvider")
   override val id = DropboxProvider.Dropbox
 
   override def fillProfile(info: OAuth2Info): Future[BasicProfile] = {
-    import play.api.Play.current
 
     val accessToken = info.accessToken
     WS.url(DropboxProvider.Api).withHeaders("Authorization" -> s"Bearer $accessToken").get().map { response =>
@@ -45,7 +49,8 @@ class DropboxProvider(routesService: RoutesService,
           val data = response.json
           val userId = (data \ Id).as[Int].toString
           val fullName = (data \ FormattedName).asOpt[String]
-          BasicProfile(id, userId, None, None, fullName, None, None, authMethod, None, Some(info))
+          val email = (data \ Email).asOpt[String]
+          BasicProfile(id, userId, None, None, fullName, email, None, authMethod, None, Some(info))
         case _ =>
           Logger.error("[securesocial] Dropbox account info request returned error: " + response.body)
           throw new AuthenticationException()
@@ -63,4 +68,5 @@ object DropboxProvider {
   val Dropbox = "dropbox"
   val Id = "uid"
   val FormattedName = "display_name"
+  val Email = "email"
 }

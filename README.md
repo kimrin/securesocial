@@ -11,16 +11,16 @@ Below is the original README as of Mar 12, 2015:
 
 |SecureSocial Release|Target Play! framework version|
 |-------|---------------------|
-|3.2.0-SNAPSHOT|2.5.X|
+|3.2.0|2.5.X|
 |3.1.0-SNAPSHOT|2.4.X|
 
 ```
 resolvers += Resolver.sonatypeRepo("snapshots")
 
-libraryDependencies += "tv.kazu" %% "securesocial" % "3.2.0-SNAPSHOT"
+libraryDependencies += "tv.kazu" %% "securesocial" % "3.2.0"
 ```
 
-Support for Play 2.4 and 2.5 is experimental. Bug reports would be welcome.
+Support for Play 2.5 is used for some sites in production. Support for Play 2.4 is not tested nor maintained. Bug reports would be welcome.
 
 ## Play! 2.3
 
@@ -38,6 +38,8 @@ Use the versions by the original author for Play! 2.2 and 2.1. See [the doc](htt
 
 # Changelog
 
+* 3.2.0 (2016-09-25)
+    * Play 2.5 support
 * 3.0.6 (2016-07-08)
     * Added Backlog provider
     * Fixed demo projects

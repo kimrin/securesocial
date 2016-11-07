@@ -16,8 +16,8 @@
  */
 package controllers;
 
+import com.google.inject.Inject;
 import play.Logger;
-import play.libs.F;
 import play.mvc.Controller;
 import play.mvc.Result;
 import securesocial.core.BasicProfile;
@@ -29,13 +29,16 @@ import service.DemoUser;
 import views.html.index;
 import views.html.linkResult;
 
+import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
+
 
 /**
  * A sample controller
  */
 public class Application extends Controller {
     public static Logger.ALogger logger = Logger.of("application.controllers.Application");
-    private RuntimeEnvironment<DemoUser> env;
+    private RuntimeEnvironment env;
 
     /**
      * A constructor needed to get a hold of the environment instance.
@@ -43,7 +46,8 @@ public class Application extends Controller {
      *
      * @param env
      */
-    public Application(RuntimeEnvironment<DemoUser> env) {
+    @Inject()
+    public Application (RuntimeEnvironment env) {
         this.env = env;
     }
     /**
@@ -94,10 +98,10 @@ public class Application extends Controller {
     /**
      * Sample use of SecureSocial.currentUser. Access the /current-user to test it
      */
-    public F.Promise<Result> currentUser() {
-        return SecureSocial.currentUser(env).map( new F.Function<Object, Result>() {
+    public CompletionStage<Result> currentUser() {
+        return SecureSocial.currentUser(env).thenApplyAsync(new Function<Object, Result>() {
             @Override
-            public Result apply(Object maybeUser) throws Throwable {
+            public Result apply(Object maybeUser) {
                 String id;
 
                 if ( maybeUser != null ) {

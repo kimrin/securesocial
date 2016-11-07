@@ -16,6 +16,7 @@
  */
 package securesocial.core.providers
 
+import play.api.{ Environment, Configuration }
 import play.api.libs.ws.WSResponse
 import securesocial.core._
 import securesocial.core.services.{ CacheService, RoutesService }
@@ -28,7 +29,7 @@ import scala.concurrent.Future
  */
 class GitHubProvider(routesService: RoutesService,
   cacheService: CacheService,
-  client: OAuth2Client)
+  client: OAuth2Client)(implicit val configuration: Configuration, val playEnv: Environment)
     extends OAuth2Provider.Base(routesService, client, cacheService) {
   val GetAuthenticatedUser = "https://api.github.com/user?access_token=%s"
   val AccessToken = "access_token"

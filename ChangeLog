@@ -1,3 +1,30 @@
+master  -
+		- Pull request #576: added missing @inject annotation for UserAware (thanks @raunak)
+		- Pull request #534: Make SecuredRequest and RequestWithUser path independent (thanks @k4200)
+3.0-M4	- 2015-11-29
+		- Upgraded to Play 2.4.4.
+		- Pull request #573: Turkish translation (thanks @aladagemre)
+		- Fixed #512: RuntimeEnvironment should use def instead of val
+		- Fixed #572: Wrong @Inject import in ProviderController
+		- Pull request #568: Update installation document regarding routes (thanks @aladagemre)
+		- Pull request #489: Add support for path to custom bootstrap css file (thanks @tro2102)
+		- Pull request #535: Update password-plugins.md (thanks @m4bwav)
+		- Pull request #536: Removed unnecessary semicolon (thanks @tototoshi)
+		- Fixed #500: Add redirect-setting in case user cancels authorization
+		- Pull request #571: Fixed GoogleProvider (thanks @dstrupl)
+		- Pull request #540: Fixed: case sensitive email, when restoring password (thanks @n0tel)
+		- Pull request #522: enable use of referer if user is already authenticated (thanks @anfuerer)
+		- Pull request #528: greek translations (thanks @AlexJoom)
+		- Pull request #525: Use plugable not authorized page (thanks @lukestephenson)
+		- Pull request #532: added extraction of dropbox email field (thanks @amn41)
+		- Pull request #541: Slack OAuth2 provider (thanks @k4200)
+		- Pull request #560: Spotify integration (thanks @mvallerie)
+		- Pull request $543: Fixed url to get authenticated user on Foursquare provider (thanks @mduarte)
+		- Pull request #550: Fixes 500 responses from failed logins (thanks @pkaeding)
+		- Pull request #549: clean-up sessions upon signup with skipped login (thanks @phammer)
+		- Event is not sealed anymore
+		- Pull request #533: Hash Leading Zeros Get Trimmed (thanks @bsyk) 
+		- Pull request #566: Migration to Play 2.4.2 (thanks @DamianoVerdone)
 3.0-M3	- 2015-02-01
 		- Changed some method names in RoutesService to make it more consistent and added password change routes
 		- Pull request #517: Fixed mail and registration views to use RouteService (thanks @maohde)

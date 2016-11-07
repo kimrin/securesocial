@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,8 +16,9 @@
  */
 package securesocial.controllers
 
+import play.api.Configuration
 import play.api.data.Form
-import play.api.i18n.Lang
+import play.api.i18n.{ MessagesApi, Lang, Messages }
 import play.api.mvc.RequestHeader
 import play.twirl.api.{ Html, Txt }
 import securesocial.core.{ BasicProfile, RuntimeEnvironment }
@@ -35,7 +36,7 @@ trait ViewTemplates {
   /**
    * Returns the html for the login page
    */
-  def getLoginPage(form: Form[(String, String)], msg: Option[String] = None)(implicit request: RequestHeader, lang: Lang): Html
+  def getLoginPage(form: Form[(String, String)], msg: Option[String] = None)(implicit request: RequestHeader, lang: Lang, configuration: Configuration): Html
 
   /**
    * Returns the html for the signup page
@@ -60,7 +61,7 @@ trait ViewTemplates {
   /**
    * Returns the html for the change password page
    */
-  def getPasswordChangePage(form: Form[ChangeInfo])(implicit request: RequestHeader, lang: Lang): Html
+  def getPasswordChangePage(form: Form[ChangeInfo])(implicit request: RequestHeader, lang: Lang, configuration: Configuration): Html
 
   /**
    * Returns the html for the not authorized page
@@ -75,7 +76,7 @@ trait MailTemplates {
   /**
    * Returns the email sent when a user starts the sign up process
    *
-   * @param token the token used to identify the request
+   * @param token  the token used to identify the request
    * @param request the current http request
    * @return a String with the text and/or html body for the email
    */
@@ -84,7 +85,7 @@ trait MailTemplates {
   /**
    * Returns the email sent when the user is already registered
    *
-   * @param user the user
+   * @param user   the user
    * @param request the current request
    * @return a tuple with the text and/or html body for the email
    */
@@ -93,7 +94,7 @@ trait MailTemplates {
   /**
    * Returns the welcome email sent when the user finished the sign up process
    *
-   * @param user the user
+   * @param user   the user
    * @param request the current request
    * @return a String with the text and/or html body for the email
    */
@@ -111,8 +112,8 @@ trait MailTemplates {
   /**
    * Returns the email sent to the user to reset the password
    *
-   * @param user the user
-   * @param token the token used to identify the request
+   * @param user   the user
+   * @param token  the token used to identify the request
    * @param request the current http request
    * @return a String with the text and/or html body for the email
    */
@@ -121,7 +122,7 @@ trait MailTemplates {
   /**
    * Returns the email sent as a confirmation of a password change
    *
-   * @param user the user
+   * @param user   the user
    * @param request the current http request
    * @return a String with the text and/or html body for the email
    */
@@ -133,46 +134,56 @@ object ViewTemplates {
   /**
    * The default views.
    */
-  class Default(env: RuntimeEnvironment[_]) extends ViewTemplates {
+  class Default(env: RuntimeEnvironment)(implicit val messagesApi: MessagesApi, configuration: Configuration) extends ViewTemplates {
     implicit val implicitEnv = env
 
     override def getLoginPage(form: Form[(String, String)],
-      msg: Option[String] = None)(implicit request: RequestHeader, lang: Lang): Html = {
+      msg: Option[String] = None)(implicit request: RequestHeader, lang: Lang, configuration: Configuration): Html = {
+      implicit val messages = messagesApi.preferred(request)
       securesocial.views.html.login(form, msg)
     }
 
     override def getSignUpPage(form: Form[RegistrationInfo], token: String)(implicit request: RequestHeader, lang: Lang): Html = {
+      implicit val messages = messagesApi.preferred(request)
       securesocial.views.html.Registration.signUp(form, token)
     }
 
     override def getStartSignUpPage(form: Form[String])(implicit request: RequestHeader, lang: Lang): Html = {
+      implicit val messages = messagesApi.preferred(request)
       securesocial.views.html.Registration.startSignUp(form)
     }
 
     override def getStartResetPasswordPage(form: Form[String])(implicit request: RequestHeader, lang: Lang): Html = {
+      implicit val messages = messagesApi.preferred(request)
       securesocial.views.html.Registration.startResetPassword(form)
     }
 
     override def getResetPasswordPage(form: Form[(String, String)], token: String)(implicit request: RequestHeader, lang: Lang): Html = {
+      implicit val messages = messagesApi.preferred(request)
       securesocial.views.html.Registration.resetPasswordPage(form, token)
     }
 
-    override def getPasswordChangePage(form: Form[ChangeInfo])(implicit request: RequestHeader, lang: Lang): Html = {
+    override def getPasswordChangePage(form: Form[ChangeInfo])(implicit request: RequestHeader, lang: Lang, configuration: Configuration): Html = {
+      implicit val messages = messagesApi.preferred(request)
       securesocial.views.html.passwordChange(form)
     }
 
     override def getNotAuthorizedPage(implicit request: RequestHeader, lang: Lang): Html = {
+      implicit val messages = messagesApi.preferred(request)
       securesocial.views.html.notAuthorized()
     }
   }
+
 }
 
 object MailTemplates {
+
   /**
    * The default mails.
    */
-  class Default(env: RuntimeEnvironment[_]) extends MailTemplates {
+  class Default(env: RuntimeEnvironment) extends MailTemplates {
     implicit val implicitEnv = env
+
     def getSignUpEmail(token: String)(implicit request: RequestHeader, lang: Lang): (Option[Txt], Option[Html]) = {
       (None, Some(securesocial.views.html.mails.signUpEmail(token)))
     }
@@ -197,4 +208,5 @@ object MailTemplates {
       (None, Some(securesocial.views.html.mails.passwordChangedNotice(user)))
     }
   }
+
 }

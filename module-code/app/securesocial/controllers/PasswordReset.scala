@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,11 +16,14 @@
  */
 package securesocial.controllers
 
+import javax.inject.Inject
+
+import play.api.{ Configuration, Environment }
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.Messages
-import play.filters.csrf._
 import play.api.mvc.Action
+import play.filters.csrf.{ CSRFCheck, _ }
 import securesocial.core._
 import securesocial.core.providers.UsernamePasswordProvider
 import securesocial.core.providers.utils.PasswordValidator
@@ -33,14 +36,13 @@ import scala.concurrent.Future
  *
  * @param env an environment
  */
-class PasswordReset(override implicit val env: RuntimeEnvironment[BasicProfile]) extends BasePasswordReset[BasicProfile]
+class PasswordReset @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment, val CSRFAddToken: CSRFAddToken, val CSRFCheck: CSRFCheck) extends BasePasswordReset
 
 /**
  * The trait that provides the Password Reset functionality
  *
- * @tparam U the user type
  */
-trait BasePasswordReset[U] extends MailTokenBasedOperations[U] {
+trait BasePasswordReset extends MailTokenBasedOperations {
   private val logger = play.api.Logger("securesocial.controllers.BasePasswordReset")
 
   val PasswordUpdated = "securesocial.password.passwordUpdated"
@@ -54,6 +56,8 @@ trait BasePasswordReset[U] extends MailTokenBasedOperations[U] {
       ).verifying(Messages(BaseRegistration.PasswordsDoNotMatch), passwords => passwords._1 == passwords._2)
   )
 
+  implicit val CSRFAddToken: CSRFAddToken
+
   /**
    * Renders the page that starts the password reset flow
    */
@@ -64,6 +68,8 @@ trait BasePasswordReset[U] extends MailTokenBasedOperations[U] {
     }
   }
 
+  implicit val CSRFCheck: CSRFCheck
+
   /**
    * Handles form submission for the start page
    */
@@ -72,18 +78,21 @@ trait BasePasswordReset[U] extends MailTokenBasedOperations[U] {
       implicit request =>
         startForm.bindFromRequest.fold(
           errors => Future.successful(BadRequest(env.viewTemplates.getStartResetPasswordPage(errors))),
-          email => env.userService.findByEmailAndProvider(email, UsernamePasswordProvider.UsernamePassword).map {
-            maybeUser =>
-              maybeUser match {
-                case Some(user) =>
-                  createToken(email, isSignUp = false).map { token =>
-                    env.mailer.sendPasswordResetEmail(user, token.uuid)
-                    env.userService.saveToken(token)
-                  }
-                case None =>
-                  env.mailer.sendUnkownEmailNotice(email)
-              }
-              handleStartResult().flashing(Success -> Messages(BaseRegistration.ThankYouCheckEmail))
+          e => {
+            val email = e.toLowerCase
+            env.userService.findByEmailAndProvider(email, UsernamePasswordProvider.UsernamePassword).map {
+              maybeUser =>
+                maybeUser match {
+                  case Some(user) =>
+                    createToken(email, isSignUp = false).map { token =>
+                      env.mailer.sendPasswordResetEmail(user, token.uuid)
+                      env.userService.saveToken(token)
+                    }
+                  case None =>
+                    env.mailer.sendUnkownEmailNotice(email)
+                }
+                handleStartResult().flashing(Success -> Messages(BaseRegistration.ThankYouCheckEmail))
+            }
           }
         )
     }

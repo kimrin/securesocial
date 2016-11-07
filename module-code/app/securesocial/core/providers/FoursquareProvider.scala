@@ -16,6 +16,7 @@
  */
 package securesocial.core.providers
 
+import play.api.{ Environment, Configuration }
 import securesocial.core._
 import securesocial.core.services.{ CacheService, RoutesService }
 
@@ -27,7 +28,7 @@ import scala.concurrent.Future
  */
 class FoursquareProvider(routesService: RoutesService,
   cacheService: CacheService,
-  client: OAuth2Client)
+  client: OAuth2Client)(implicit val configuration: Configuration, val playEnv: Environment)
     extends OAuth2Provider.Base(routesService, client, cacheService) {
   val GetAuthenticatedUser = "https://api.foursquare.com/v2/users/self?v=20140404oauth_token=%s"
   val AccessToken = "access_token"

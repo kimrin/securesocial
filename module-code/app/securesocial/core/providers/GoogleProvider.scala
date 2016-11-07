@@ -16,6 +16,7 @@
  */
 package securesocial.core.providers
 
+import play.api.{ Environment, Configuration }
 import play.api.libs.json.{ JsArray, JsObject }
 import securesocial.core._
 import securesocial.core.services.{ CacheService, RoutesService }
@@ -27,7 +28,7 @@ import scala.concurrent.Future
  */
 class GoogleProvider(routesService: RoutesService,
   cacheService: CacheService,
-  client: OAuth2Client)
+  client: OAuth2Client)(implicit val configuration: Configuration, val playEnv: Environment)
     extends OAuth2Provider.Base(routesService, client, cacheService) {
   val UserInfoApi = "https://www.googleapis.com/plus/v1/people/me?fields=id,name,displayName,image,emails&access_token="
   val Error = "error"
@@ -62,7 +63,7 @@ class GoogleProvider(routesService: RoutesService,
           val lastName = (me \ Name \ FamilyName).asOpt[String]
           val fullName = (me \ DisplayName).asOpt[String]
           val avatarUrl = (me \ Image \ Url).asOpt[String]
-          val emails = (me \ Emails).asInstanceOf[JsArray]
+          val emails = (me \ Emails).get.asInstanceOf[JsArray]
           val email = emails.value.find(v => (v \ EmailType).as[String] == Account).map(e => (e \ Email).as[String])
           BasicProfile(id, userId, firstName, lastName, fullName, email, avatarUrl, authMethod, oAuth2Info = Some(info))
       }

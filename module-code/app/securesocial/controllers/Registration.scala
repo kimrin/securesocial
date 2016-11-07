@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,11 +16,14 @@
  */
 package securesocial.controllers
 
+import javax.inject.Inject
+
+import play.api.{ Environment, Configuration }
 import play.api.data.Forms._
 import play.api.data._
 import play.api.i18n.Messages
-import play.filters.csrf._
 import play.api.mvc.Action
+import play.filters.csrf.{ CSRFCheck, _ }
 import securesocial.core._
 import securesocial.core.authenticator.CookieAuthenticator
 import securesocial.core.providers.UsernamePasswordProvider
@@ -34,14 +37,14 @@ import scala.concurrent.{ Await, Future }
  *
  * @param env the environment
  */
-class Registration(override implicit val env: RuntimeEnvironment[BasicProfile]) extends BaseRegistration[BasicProfile]
+class Registration @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment, val CSRFAddToken: CSRFAddToken, val CSRFCheck: CSRFCheck) extends BaseRegistration
 
 /**
  * A trait that provides the means to handle user registration
  *
  * @tparam U the user type
  */
-trait BaseRegistration[U] extends MailTokenBasedOperations[U] {
+trait BaseRegistration extends MailTokenBasedOperations {
 
   import securesocial.controllers.BaseRegistration._
 
@@ -86,7 +89,9 @@ trait BaseRegistration[U] extends MailTokenBasedOperations[U] {
     (info => Some((info.firstName, info.lastName, ("", ""))))
   )
 
-  val form = if (UsernamePasswordProvider.withUserNameSupport) formWithUsername else formWithoutUsername
+  val form = if (env.usernamePasswordProviderConfigurations.withUserNameSupport) formWithUsername else formWithoutUsername
+
+  implicit val CSRFAddToken: CSRFAddToken
 
   /**
    * Starts the sign up process
@@ -94,13 +99,15 @@ trait BaseRegistration[U] extends MailTokenBasedOperations[U] {
   def startSignUp = CSRFAddToken {
     Action {
       implicit request =>
-        if (SecureSocial.enableRefererAsOriginalUrl) {
+        if (enableRefererAsOriginalUrl) {
           SecureSocial.withRefererAsOriginalUrl(Ok(env.viewTemplates.getStartSignUpPage(startForm)))
         } else {
           Ok(env.viewTemplates.getStartSignUpPage(startForm))
         }
     }
   }
+
+  implicit val CSRFCheck: CSRFCheck
 
   def handleStartSignUp = CSRFCheck {
     Action.async {
@@ -133,6 +140,7 @@ trait BaseRegistration[U] extends MailTokenBasedOperations[U] {
 
   /**
    * Renders the sign up page
+   *
    * @return
    */
   def signUp(token: String) = CSRFAddToken {
@@ -160,7 +168,7 @@ trait BaseRegistration[U] extends MailTokenBasedOperations[U] {
                 Future.successful(BadRequest(env.viewTemplates.getSignUpPage(errors, t.uuid)))
               },
               info => {
-                val id = if (UsernamePasswordProvider.withUserNameSupport) info.userName.get else t.email
+                val id = if (env.usernamePasswordProviderConfigurations.withUserNameSupport) info.userName.get else t.email
                 val newUser = BasicProfile(
                   providerId,
                   id,
@@ -185,16 +193,19 @@ trait BaseRegistration[U] extends MailTokenBasedOperations[U] {
                   saved <- env.userService.save(toSave, SaveMode.SignUp);
                   deleted <- env.userService.deleteToken(t.uuid)
                 ) yield {
-                  if (UsernamePasswordProvider.sendWelcomeEmail)
+                  if (env.usernamePasswordProviderConfigurations.sendWelcomeEmail)
                     env.mailer.sendWelcomeEmail(newUser)
                   val eventSession = Events.fire(new SignUpEvent(saved)).getOrElse(request.session)
-                  if (UsernamePasswordProvider.signupSkipLogin) {
-                    env.authenticatorService.find(CookieAuthenticator.Id).map {
+                  if (env.usernamePasswordProviderConfigurations.signupSkipLogin) {
+                    env.authenticatorService.find(env.cookieAuthenticatorConfigurations.Id).map {
                       _.fromUser(saved).flatMap { authenticator =>
-                        confirmationResult().flashing(Success -> Messages(SignUpDone)).startingAuthenticator(authenticator)
+                        confirmationResult()
+                          .flashing(Success -> Messages(SignUpDone))
+                          .withSession(eventSession - SecureSocial.OriginalUrlKey - IdentityProvider.SessionId)
+                          .startingAuthenticator(authenticator)
                       }
                     } getOrElse {
-                      logger.error(s"[securesocial] There isn't CookieAuthenticator registered in the RuntimeEnvironment")
+                      logger.error("[securesocial] There isn't CookieAuthenticator registered in the RuntimeEnvironment")
                       Future.successful(confirmationResult().flashing(Error -> Messages("There was an error signing you up")))
                     }
                   } else {

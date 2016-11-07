@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,30 +16,32 @@
  */
 package securesocial.controllers
 
-import securesocial.core._
-import securesocial.core.SecureSocial._
-import play.api.mvc.Result
-import play.api.Play
+import javax.inject.Inject
+
+import play.api.{ Configuration, Application, Environment }
 import play.api.data.Form
 import play.api.data.Forms._
-import securesocial.core.providers.utils.PasswordValidator
 import play.api.i18n.Messages
-import scala.concurrent.{ Await, ExecutionContext, Future }
-import play.filters.csrf._
+import play.api.mvc.Result
+import play.filters.csrf.{ CSRFCheck, _ }
+import securesocial.core.SecureSocial._
+import securesocial.core._
+import securesocial.core.providers.utils.PasswordValidator
+
+import scala.concurrent.{ Await, Future }
 
 /**
  * A default PasswordChange controller that uses the BasicProfile as the user type
  *
  * @param env An environment
  */
-class PasswordChange(override implicit val env: RuntimeEnvironment[BasicProfile]) extends BasePasswordChange[BasicProfile]
+class PasswordChange @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment, val CSRFAddToken: CSRFAddToken, val CSRFCheck: CSRFCheck) extends BasePasswordChange
 
 /**
  * A trait that defines the password change functionality
  *
- * @tparam U the user object type
  */
-trait BasePasswordChange[U] extends SecureSocial[U] {
+trait BasePasswordChange extends SecureSocial {
   val CurrentPassword = "currentPassword"
   val InvalidPasswordMessage = "securesocial.passwordChange.invalidPassword"
   val NewPassword = "newPassword"
@@ -55,18 +57,19 @@ trait BasePasswordChange[U] extends SecureSocial[U] {
   val onPasswordChangeGoTo = "securesocial.onPasswordChangeGoTo"
 
   /** The redirect target of the handlePasswordChange action. */
-  def onHandlePasswordChangeGoTo = Play.current.configuration.getString(onPasswordChangeGoTo).getOrElse(
+  def onHandlePasswordChangeGoTo = configuration.getString(onPasswordChangeGoTo).getOrElse(
     securesocial.controllers.routes.PasswordChange.page().url
   )
 
   /**
    * checks if the supplied password matches the stored one
+   *
    * @param suppliedPassword the password entered in the form
-   * @param request the current request
+   * @param request         the current request
    * @tparam A the type of the user object
    * @return a future boolean
    */
-  def checkCurrentPassword[A](suppliedPassword: String)(implicit request: SecuredRequest[A, U]): Future[Boolean] = {
+  def checkCurrentPassword[A](suppliedPassword: String)(implicit request: SecuredRequest[A, env.U]): Future[Boolean] = {
     env.userService.passwordInfoFor(request.user).map {
       case Some(info) =>
         env.passwordHashers.get(info.hasher).exists {
@@ -76,7 +79,7 @@ trait BasePasswordChange[U] extends SecureSocial[U] {
     }
   }
 
-  private def execute[A](f: Form[ChangeInfo] => Future[Result])(implicit request: SecuredRequest[A, U]): Future[Result] = {
+  private def execute[A](f: Form[ChangeInfo] => Future[Result])(implicit request: SecuredRequest[A, env.U]): Future[Result] = {
     val form = Form[ChangeInfo](
       mapping(
         CurrentPassword ->
@@ -101,6 +104,8 @@ trait BasePasswordChange[U] extends SecureSocial[U] {
     }
   }
 
+  implicit val CSRFAddToken: CSRFAddToken
+
   /**
    * Renders the password change page
    *
@@ -116,6 +121,8 @@ trait BasePasswordChange[U] extends SecureSocial[U] {
     }
   }
 
+  implicit val CSRFCheck: CSRFCheck
+
   /**
    * Handles form submission from the password change page
    *
@@ -128,14 +135,14 @@ trait BasePasswordChange[U] extends SecureSocial[U] {
           errors => Future.successful(BadRequest(env.viewTemplates.getPasswordChangePage(errors))),
           info => {
             val newPasswordInfo = env.currentHasher.hash(info.newPassword)
-            implicit val userLang = request2lang(request)
+            val userLang = request2lang(request)
             env.userService.updatePasswordInfo(request.user, newPasswordInfo).map {
               case Some(u) =>
                 env.mailer.sendPasswordChangedNotice(u)(request, userLang)
-                val result = Redirect(onHandlePasswordChangeGoTo).flashing(Success -> Messages(OkMessage)(userLang))
+                val result = Redirect(onHandlePasswordChangeGoTo).flashing(Success -> Messages(OkMessage))
                 Events.fire(new PasswordChangeEvent(request.user)).map(result.withSession).getOrElse(result)
               case None =>
-                Redirect(onHandlePasswordChangeGoTo).flashing(Error -> Messages("securesocial.password.error")(userLang))
+                Redirect(onHandlePasswordChangeGoTo).flashing(Error -> Messages("securesocial.password.error"))
             }
           }
         )
@@ -148,6 +155,6 @@ trait BasePasswordChange[U] extends SecureSocial[U] {
  * The class used in the form
  *
  * @param currentPassword the user's current password
- * @param newPassword the new password
+ * @param newPassword    the new password
  */
 case class ChangeInfo(currentPassword: String, newPassword: String)

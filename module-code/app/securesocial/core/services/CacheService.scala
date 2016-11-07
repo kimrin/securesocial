@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,12 @@
  */
 package securesocial.core.services
 
+import javax.inject.Inject
+
+import play.api.Application
+import play.api.cache.CacheApi
+
+import scala.concurrent.duration.Duration
 import scala.concurrent.{ ExecutionContext, Future }
 
 /**
@@ -30,6 +36,8 @@ trait CacheService {
   def getAs[T](key: String)(implicit ct: ClassTag[T]): Future[Option[T]]
 
   def remove(key: String): Future[Unit]
+
+  implicit val cache: CacheApi
 }
 
 object CacheService {
@@ -37,20 +45,20 @@ object CacheService {
   /**
    * A default implementation for the CacheService based on the Play cache.
    */
-  class Default(implicit val executionContext: ExecutionContext) extends CacheService {
-    import play.api.cache.Cache
+  class Default(implicit val executionContext: ExecutionContext, implicit override val cache: CacheApi) extends CacheService {
+
     import scala.reflect.ClassTag
-    import play.api.Play.current
 
     override def set[T](key: String, value: T, ttlInSeconds: Int): Future[Unit] =
-      Future.successful(Cache.set(key, value, ttlInSeconds))
+      Future.successful(cache.set(key, value, Duration(ttlInSeconds, "s")))
 
     override def getAs[T](key: String)(implicit ct: ClassTag[T]): Future[Option[T]] = Future.successful {
-      Cache.getAs[T](key)
+      cache.get[T](key)
     }
 
     override def remove(key: String): Future[Unit] = Future.successful {
-      Cache.remove(key)
+      cache.remove(key)
     }
   }
+
 }
