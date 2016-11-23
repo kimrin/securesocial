@@ -36,6 +36,24 @@ Then, implement `UserService` etc. See [the sample projects](samples/).
 
 Use the versions by the original author for Play! 2.2 and 2.1. See [the doc](http://securesocial.ws/guide/getting-started.html).
 
+# Supported services
+
+* The ones the origiinal version supports:
+    * Twitter (OAuth1)
+    * Facebook (OAuth2)
+    * GitHub (OAuth2)
+    * Google (OAuth2)
+    * LinkedIn (OAuth1 and OAuth2)
+    * Foursquare (OAuth2)
+    * Instagram (OAuth2)
+    * VK (OAuth2)
+    * XING (OAuth1)
+    * Slack (OAuth2)
+    * Username/Password with signup and reset password functionality.
+* The ones that this forked version has added:
+    * Bitbucket (OAuth2)
+    * Backlog (OAuth2)
+
 # Changelog
 
 * 3.2.0 (2016-09-25)
