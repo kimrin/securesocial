@@ -23,7 +23,7 @@ import securesocial.core.providers.MailToken
 trait UserService[U] {
 
   /**
-   * Finds a SocialUser that maches the specified id
+   * Finds a SocialUser that matches the specified id
    *
    * @param providerId the provider id
    * @param userId the user id
