@@ -120,6 +120,7 @@ trait BaseProviderController extends SecureSocial {
    * @param miscParam miscellaneous information necessary for providers
    */
   private def handleAuth(provider: String, redirectTo: Option[String], scope: Option[String], saveModeStr: Option[String] = None, miscParam: Option[String] = None) = UserAwareAction.async { implicit request =>
+    val messages = messagesApi.preferred(request)
     val authenticationFlow = request.user.isEmpty
     val paramsForSession: Map[String, Option[String]] = Map(SecureSocial.OriginalUrlKey -> redirectTo, SecureSocial.SaveModeKey -> saveModeStr)
 
@@ -136,9 +137,9 @@ trait BaseProviderController extends SecureSocial {
         case authenticated: AuthenticationResult.Authenticated =>
           if (authenticationFlow) {
             val profile = authenticated.profile
-            env.userService.find(profile.providerId, profile.userId).flatMap { maybeExisting =>
+            env.userService.find(profile.providerId, profile.userId, messages).flatMap { maybeExisting =>
               val saveMode = getSaveMode(request.session.get(SecureSocial.SaveModeKey), maybeExisting.isDefined)
-              env.userService.save(authenticated.profile, saveMode).flatMap { userForAction =>
+              env.userService.save(authenticated.profile, saveMode, messages).flatMap { userForAction =>
                 logger.debug(s"[securesocial] user completed authentication: provider = ${profile.providerId}, userId: ${profile.userId}, mode = $saveMode")
                 val evt = if (saveMode == SaveMode.LoggedIn) new LoginEvent(userForAction) else new SignUpEvent(userForAction)
                 val sessionAfterEvents = Events.fire(evt).getOrElse(request.session)
@@ -155,7 +156,7 @@ trait BaseProviderController extends SecureSocial {
               case Some(currentUser) =>
                 val modifiedSession = overrideSession(request.session, paramsForSession)
                 for (
-                  linked <- env.userService.link(currentUser, authenticated.profile);
+                  linked <- env.userService.link(currentUser, authenticated.profile, messages);
                   updatedAuthenticator <- request.authenticator.get.updateUser(linked);
                   result <- Redirect(toUrl(modifiedSession)).withSession(modifiedSession -
                     SecureSocial.OriginalUrlKey -
