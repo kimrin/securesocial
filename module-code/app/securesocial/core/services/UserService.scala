@@ -127,4 +127,10 @@ object SaveMode {
   val LoggedIn = SaveMode("loggedIn")
   val SignUp = SaveMode("signUp")
   val PasswordChange = SaveMode("passwordChange")
+
+  private val values = List(LoggedIn, SignUp, PasswordChange)
+
+  def getFromString(str: String): Option[SaveMode] = {
+    values.filter(_.name == str).headOption
+  }
 }
