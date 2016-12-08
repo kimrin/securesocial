@@ -16,6 +16,8 @@
  */
 package securesocial.core.services
 
+import play.api.i18n.Messages
+
 import scala.concurrent.Future
 import securesocial.core.{ PasswordInfo, BasicProfile }
 import securesocial.core.providers.MailToken
@@ -30,6 +32,10 @@ trait UserService[U] {
    * @return an optional profile
    */
   def find(providerId: String, userId: String): Future[Option[BasicProfile]]
+
+  def find(providerId: String, userId: String, messages: Messages): Future[Option[BasicProfile]] = {
+    find(providerId, userId)
+  }
 
   /**
    * Finds a profile by email and provider
@@ -49,6 +55,10 @@ trait UserService[U] {
    */
   def save(profile: BasicProfile, mode: SaveMode): Future[U]
 
+  def save(profile: BasicProfile, mode: SaveMode, messages: Messages): Future[U] = {
+    save(profile, mode)
+  }
+
   /**
    * Links the current user to another profile
    *
@@ -56,6 +66,10 @@ trait UserService[U] {
    * @param to the profile that needs to be linked to
    */
   def link(current: U, to: BasicProfile): Future[U]
+
+  def link(current: U, to: BasicProfile, messages: Messages): Future[U] = {
+    link(current, to)
+  }
 
   /**
    * Returns an optional PasswordInfo instance for a given user
