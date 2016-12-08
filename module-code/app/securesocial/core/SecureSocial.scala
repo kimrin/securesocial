@@ -171,6 +171,7 @@ trait SecureSocial extends Controller with I18nSupport {
 
 object SecureSocial {
   val OriginalUrlKey = "original-url"
+  val SaveModeKey = "save-mode"
 
   /**
    * A request that adds the User for the current call

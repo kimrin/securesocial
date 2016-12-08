@@ -47,27 +47,31 @@ trait BaseProviderController extends SecureSocial {
    *
    * @param provider The id of the provider that needs to handle the call
    */
-  def authenticate(provider: String, redirectTo: Option[String] = None, scope: Option[String] = None, miscParam: Option[String]) = handleAuth(provider, redirectTo, scope, miscParam)
+  def authenticate(provider: String, redirectTo: Option[String] = None, scope: Option[String] = None, saveMode: Option[String], miscParam: Option[String]) = {
+    handleAuth(provider, redirectTo, scope, saveMode, miscParam)
+  }
 
   /**
    * The authentication entry point for POST requests
    *
    * @param provider The id of the provider that needs to handle the call
    */
-  def authenticateByPost(provider: String, redirectTo: Option[String] = None, scope: Option[String] = None, miscParam: Option[String]) = handleAuth(provider, redirectTo, scope, miscParam)
+  def authenticateByPost(provider: String, redirectTo: Option[String] = None, scope: Option[String] = None, saveMode: Option[String], miscParam: Option[String]) = {
+    handleAuth(provider, redirectTo, scope, saveMode, miscParam)
+  }
 
   /**
-   * Overrides the original url if neded
+   * Overrides the values in the session
    *
    * @param session the current session
-   * @param redirectTo the url that overrides the originalUrl
-   * @return a session updated with the url
+   * @param params map of param name -> Option of value
+   * @return a session updated with the params
    */
-  private def overrideOriginalUrl(session: Session, redirectTo: Option[String]) = redirectTo match {
-    case Some(url) =>
-      session + (SecureSocial.OriginalUrlKey -> url)
-    case _ =>
-      session
+  private def overrideSession(session: Session, params: Map[String, Option[String]]): Session = {
+    params.foldLeft(session) { (resultSession, t) =>
+      val (key, optVal) = t
+      optVal.map(value => resultSession + (key -> value)).getOrElse(resultSession)
+    }
   }
 
   /**
@@ -87,7 +91,7 @@ trait BaseProviderController extends SecureSocial {
    * @param scope Pass Some[String] to ask for different scopes from those in securesocial.conf
    * @param miscParam
    */
-  private def getProvider(provider: String, scope: Option[String], miscParam: Option[String]): Option[IdentityProvider] = provider match {
+  private def getProvider(provider: String, scope: Option[String], saveMode: Option[String], miscParam: Option[String]): Option[IdentityProvider] = provider match {
     case UsernamePasswordProvider.UsernamePassword =>
       Some(env.createProvider(provider, None, miscParam))
     case _ =>
@@ -100,19 +104,26 @@ trait BaseProviderController extends SecureSocial {
       Some(env.createProvider(provider, Some(settings), miscParam))
   }
 
+  private def getSaveMode(saveModeStr: Option[String], existsUser: Boolean): SaveMode = {
+    saveModeStr.flatMap(SaveMode.getFromString(_)).getOrElse {
+      if (existsUser) SaveMode.LoggedIn else SaveMode.SignUp
+    }
+  }
+
   /**
    * Common method to handle GET and POST authentication requests
    *
    * @param provider the provider that needs to handle the flow
    * @param redirectTo the url the user needs to be redirected to after being authenticated
    * @param scope OAuth2 scope
+   * @param saveModeStr
    * @param miscParam miscellaneous information necessary for providers
    */
-  private def handleAuth(provider: String, redirectTo: Option[String], scope: Option[String], miscParam: Option[String] = None) = UserAwareAction.async { implicit request =>
+  private def handleAuth(provider: String, redirectTo: Option[String], scope: Option[String], saveModeStr: Option[String] = None, miscParam: Option[String] = None) = UserAwareAction.async { implicit request =>
     val authenticationFlow = request.user.isEmpty
-    val modifiedSession = overrideOriginalUrl(request.session, redirectTo)
+    val paramsForSession: Map[String, Option[String]] = Map(SecureSocial.OriginalUrlKey -> redirectTo, SecureSocial.SaveModeKey -> saveModeStr)
 
-    getProvider(provider, scope, miscParam).map {
+    getProvider(provider, scope, saveModeStr, miscParam).map {
       _.authenticate().flatMap {
         case denied: AuthenticationResult.AccessDenied =>
           Future.successful(Redirect(env.routes.accessDeniedUrl).flashing("error" -> Messages("securesocial.login.accessDenied")))
@@ -120,18 +131,16 @@ trait BaseProviderController extends SecureSocial {
           logger.error(s"[securesocial] authentication failed, reason: ${failed.error}")
           throw new AuthenticationException()
         case flow: AuthenticationResult.NavigationFlow => Future.successful {
-          redirectTo.map { url =>
-            flow.result.addToSession(SecureSocial.OriginalUrlKey -> url)
-          } getOrElse flow.result
+          flow.result.addToSession(paramsForSession.toList.filter(_._2.isDefined).map(t => t._1 -> t._2.get): _*)
         }
         case authenticated: AuthenticationResult.Authenticated =>
           if (authenticationFlow) {
             val profile = authenticated.profile
             env.userService.find(profile.providerId, profile.userId).flatMap { maybeExisting =>
-              val mode = if (maybeExisting.isDefined) SaveMode.LoggedIn else SaveMode.SignUp
-              env.userService.save(authenticated.profile, mode).flatMap { userForAction =>
-                logger.debug(s"[securesocial] user completed authentication: provider = ${profile.providerId}, userId: ${profile.userId}, mode = $mode")
-                val evt = if (mode == SaveMode.LoggedIn) new LoginEvent(userForAction) else new SignUpEvent(userForAction)
+              val saveMode = getSaveMode(request.session.get(SecureSocial.SaveModeKey), maybeExisting.isDefined)
+              env.userService.save(authenticated.profile, saveMode).flatMap { userForAction =>
+                logger.debug(s"[securesocial] user completed authentication: provider = ${profile.providerId}, userId: ${profile.userId}, mode = $saveMode")
+                val evt = if (saveMode == SaveMode.LoggedIn) new LoginEvent(userForAction) else new SignUpEvent(userForAction)
                 val sessionAfterEvents = Events.fire(evt).getOrElse(request.session)
                 builder().fromUser(userForAction).flatMap { authenticator =>
                   Redirect(toUrl(sessionAfterEvents)).withSession(sessionAfterEvents -
@@ -144,11 +153,13 @@ trait BaseProviderController extends SecureSocial {
           } else {
             request.user match {
               case Some(currentUser) =>
+                val modifiedSession = overrideSession(request.session, paramsForSession)
                 for (
                   linked <- env.userService.link(currentUser, authenticated.profile);
                   updatedAuthenticator <- request.authenticator.get.updateUser(linked);
                   result <- Redirect(toUrl(modifiedSession)).withSession(modifiedSession -
                     SecureSocial.OriginalUrlKey -
+                    SecureSocial.SaveModeKey -
                     IdentityProvider.SessionId -
                     OAuth1Provider.CacheKey).touchingAuthenticator(updatedAuthenticator)
                 ) yield {
