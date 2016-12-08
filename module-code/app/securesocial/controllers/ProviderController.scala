@@ -171,6 +171,11 @@ trait BaseProviderController extends SecureSocial {
             }
           }
       } recover {
+        case e: RecoverableAuthenticationException =>
+          logger.info("Unable to log user in. An exception was thrown")
+          val message = e.message.getOrElse(Messages("securesocial.login.errorLoggingIn"))
+          val redirectUrl = e.redirectUrl.map(_.absoluteURL()).getOrElse(env.routes.loginPageUrl)
+          Redirect(redirectUrl).flashing("error" -> message)
         case e =>
           logger.error("Unable to log user in. An exception was thrown", e)
           Redirect(env.routes.loginPageUrl).flashing("error" -> Messages("securesocial.login.errorLoggingIn"))
