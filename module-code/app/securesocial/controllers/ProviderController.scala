@@ -47,8 +47,8 @@ trait BaseProviderController extends SecureSocial {
    *
    * @param provider The id of the provider that needs to handle the call
    */
-  def authenticate(provider: String, redirectTo: Option[String] = None, scope: Option[String] = None, saveMode: Option[String], miscParam: Option[String]) = {
-    handleAuth(provider, redirectTo, scope, saveMode, miscParam)
+  def authenticate(provider: String, redirectTo: Option[String] = None, scope: Option[String] = None, authorizationUrlParams: Map[String, String], saveMode: Option[String], miscParam: Option[String]) = {
+    handleAuth(provider, redirectTo, scope, authorizationUrlParams, saveMode, miscParam)
   }
 
   /**
@@ -56,8 +56,8 @@ trait BaseProviderController extends SecureSocial {
    *
    * @param provider The id of the provider that needs to handle the call
    */
-  def authenticateByPost(provider: String, redirectTo: Option[String] = None, scope: Option[String] = None, saveMode: Option[String], miscParam: Option[String]) = {
-    handleAuth(provider, redirectTo, scope, saveMode, miscParam)
+  def authenticateByPost(provider: String, redirectTo: Option[String] = None, scope: Option[String] = None, authorizationUrlParams: Map[String, String], saveMode: Option[String], miscParam: Option[String]) = {
+    handleAuth(provider, redirectTo, scope, authorizationUrlParams, saveMode, miscParam)
   }
 
   /**
@@ -91,7 +91,7 @@ trait BaseProviderController extends SecureSocial {
    * @param scope Pass Some[String] to ask for different scopes from those in securesocial.conf
    * @param miscParam
    */
-  private def getProvider(provider: String, scope: Option[String], saveMode: Option[String], miscParam: Option[String]): Option[IdentityProvider] = provider match {
+  private def getProvider(provider: String, scope: Option[String], authorizationUrlParams: Map[String, String], saveMode: Option[String], miscParam: Option[String]): Option[IdentityProvider] = provider match {
     case UsernamePasswordProvider.UsernamePassword =>
       Some(env.createProvider(provider, None, miscParam))
     case _ =>
@@ -101,7 +101,8 @@ trait BaseProviderController extends SecureSocial {
       } else {
         oauth2SettingsBuilder.forProvider(provider)
       }
-      Some(env.createProvider(provider, Some(settings), miscParam))
+      val defaultAuthUrlParams = settings.authorizationUrlParams
+      Some(env.createProvider(provider, Some(settings.copy(authorizationUrlParams = defaultAuthUrlParams ++ authorizationUrlParams)), miscParam))
   }
 
   private def getSaveMode(saveModeStr: Option[String], existsUser: Boolean): SaveMode = {
@@ -119,12 +120,12 @@ trait BaseProviderController extends SecureSocial {
    * @param saveModeStr
    * @param miscParam miscellaneous information necessary for providers
    */
-  private def handleAuth(provider: String, redirectTo: Option[String], scope: Option[String], saveModeStr: Option[String] = None, miscParam: Option[String] = None) = UserAwareAction.async { implicit request =>
+  private def handleAuth(provider: String, redirectTo: Option[String], scope: Option[String], authorizationUrlParams: Map[String, String], saveModeStr: Option[String] = None, miscParam: Option[String] = None) = UserAwareAction.async { implicit request =>
     val messages = messagesApi.preferred(request)
     val authenticationFlow = request.user.isEmpty
     val paramsForSession: Map[String, Option[String]] = Map(SecureSocial.OriginalUrlKey -> redirectTo, SecureSocial.SaveModeKey -> saveModeStr)
 
-    getProvider(provider, scope, saveModeStr, miscParam).map {
+    getProvider(provider, scope, authorizationUrlParams, saveModeStr, miscParam).map {
       _.authenticate().flatMap {
         case denied: AuthenticationResult.AccessDenied =>
           Future.successful(Redirect(env.routes.accessDeniedUrl).flashing("error" -> Messages("securesocial.login.accessDenied")))

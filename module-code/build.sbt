@@ -83,3 +83,4 @@ javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-encoding", "UTF-8",  
 
 // packagedArtifacts += ((artifact in playPackageAssets).value -> playPackageAssets.value)
 
+routesImport += "securesocial.controllers.Implicits._"
