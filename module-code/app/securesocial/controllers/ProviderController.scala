@@ -46,6 +46,11 @@ trait BaseProviderController extends SecureSocial {
    * The authentication entry point for GET requests
    *
    * @param provider The id of the provider that needs to handle the call
+   * @param redirectTo
+   * @param scope This will replace the one defined in securesocial.conf
+   * @param authorizationUrlParams These params will be added to the ones defined in securesocial.conf
+   * @param saveMode One of SaveMode.*
+   * @param miscParam
    */
   def authenticate(provider: String, redirectTo: Option[String] = None, scope: Option[String] = None, authorizationUrlParams: Map[String, String], saveMode: Option[String], miscParam: Option[String]) = {
     handleAuth(provider, redirectTo, scope, authorizationUrlParams, saveMode, miscParam)
@@ -55,6 +60,11 @@ trait BaseProviderController extends SecureSocial {
    * The authentication entry point for POST requests
    *
    * @param provider The id of the provider that needs to handle the call
+   * @param redirectTo
+   * @param scope This will replace the one defined in securesocial.conf
+   * @param authorizationUrlParams These params will be added to the ones defined in securesocial.conf
+   * @param saveMode One of SaveMode.*
+   * @param miscParam
    */
   def authenticateByPost(provider: String, redirectTo: Option[String] = None, scope: Option[String] = None, authorizationUrlParams: Map[String, String], saveMode: Option[String], miscParam: Option[String]) = {
     handleAuth(provider, redirectTo, scope, authorizationUrlParams, saveMode, miscParam)
@@ -89,6 +99,8 @@ trait BaseProviderController extends SecureSocial {
   /**
    * @param provider e.g. "github"
    * @param scope Pass Some[String] to ask for different scopes from those in securesocial.conf
+   * @param authorizationUrlParams
+   * @param saveMode One of SaveMode.*
    * @param miscParam
    */
   private def getProvider(provider: String, scope: Option[String], authorizationUrlParams: Map[String, String], saveMode: Option[String], miscParam: Option[String]): Option[IdentityProvider] = provider match {
@@ -117,6 +129,7 @@ trait BaseProviderController extends SecureSocial {
    * @param provider the provider that needs to handle the flow
    * @param redirectTo the url the user needs to be redirected to after being authenticated
    * @param scope OAuth2 scope
+   * @param authorizationUrlParams
    * @param saveModeStr
    * @param miscParam miscellaneous information necessary for providers
    */
