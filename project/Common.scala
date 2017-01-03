@@ -1,7 +1,7 @@
 
 
 object Common {
-  def version = "3.2.1"
+  def version = "3.2.2-SNAPSHOT"
 
   def playVersion = System.getProperty("play.version", "2.5.10")
 
