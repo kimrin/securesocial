@@ -160,6 +160,7 @@ trait BaseProviderController extends SecureSocial {
                 builder().fromUser(userForAction).flatMap { authenticator =>
                   Redirect(toUrl(sessionAfterEvents)).withSession(sessionAfterEvents -
                     SecureSocial.OriginalUrlKey -
+                    SecureSocial.SaveModeKey -
                     IdentityProvider.SessionId -
                     OAuth1Provider.CacheKey).startingAuthenticator(authenticator)
                 }
