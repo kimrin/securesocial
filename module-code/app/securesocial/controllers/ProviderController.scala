@@ -154,12 +154,15 @@ trait BaseProviderController extends SecureSocial {
             env.userService.find(profile.providerId, profile.userId, messages).flatMap { maybeExisting =>
               val saveMode = getSaveMode(request.session.get(SecureSocial.SaveModeKey), maybeExisting.isDefined)
               env.userService.save(authenticated.profile, saveMode, messages).flatMap { userForAction =>
-                logger.debug(s"[securesocial] user completed authentication: provider = ${profile.providerId}, userId: ${profile.userId}, mode = $saveMode")
+                logger.debug(s"[securesocial] user completed authentication: provider = ${profile.providerId}, userId: ${profile.userId}, mode = $saveMode, session = ${request.session.data}")
                 val evt = if (saveMode == SaveMode.LoggedIn) new LoginEvent(userForAction) else new SignUpEvent(userForAction)
                 val sessionAfterEvents = Events.fire(evt).getOrElse(request.session)
                 builder().fromUser(userForAction).flatMap { authenticator =>
-                  Redirect(toUrl(sessionAfterEvents)).withSession(sessionAfterEvents -
+                  val url = toUrl(sessionAfterEvents)
+                  logger.debug(s"[securesocial] redirecting to $url")
+                  Redirect(url).withSession(sessionAfterEvents -
                     SecureSocial.OriginalUrlKey -
+                    SecureSocial.SaveModeKey -
                     IdentityProvider.SessionId -
                     OAuth1Provider.CacheKey).startingAuthenticator(authenticator)
                 }
