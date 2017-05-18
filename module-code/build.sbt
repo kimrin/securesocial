@@ -20,7 +20,7 @@ libraryDependencies ++= Seq(
   ws,
   filters,
   specs2 % "test",
-  "com.typesafe.play" %% "play-mailer" % "3.0.1",
+  "com.typesafe.play" %% "play-mailer" % "5.0.0",
   "org.mindrot" % "jbcrypt" % "0.3m"
 )
 
