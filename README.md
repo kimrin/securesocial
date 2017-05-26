@@ -11,13 +11,13 @@ Below is the original README as of Mar 12, 2015:
 
 |SecureSocial Release|Target Play! framework version|
 |-------|---------------------|
-|3.2.3|2.5.X|
+|3.2.4|2.5.X|
 |3.1.0-SNAPSHOT|2.4.X|
 
 ```
 resolvers += Resolver.sonatypeRepo("snapshots")
 
-libraryDependencies += "tv.kazu" %% "securesocial" % "3.2.3"
+libraryDependencies += "tv.kazu" %% "securesocial" % "3.2.4"
 ```
 
 Support for Play 2.5 is used for some sites in production. Support for Play 2.4 is not tested nor maintained. Bug reports would be welcome.
@@ -56,6 +56,10 @@ Use the versions by the original author for Play! 2.2 and 2.1. See [the doc](htt
 
 # Changelog
 
+* 3.2.4 (2017-05-26)
+    * Updated play-mailer from 3.0.1 to 5.0.0, which is for Play 2.5
+    * Updated the play dependencies to 2.5.15
+    * Fixed FacebookProvider
 * 3.2.3 (2017-04-17)
     * Fixed a bug that `save-mode` remained in the session after login
 * 3.2.2 (2017-01-23)
