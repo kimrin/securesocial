@@ -15,6 +15,7 @@
  */
 package securesocial.core.java;
 
+import play.api.i18n.Messages;
 import play.libs.Scala;
 import scala.Option;
 import scala.concurrent.Future;
@@ -53,6 +54,10 @@ public abstract class BaseUserService<U> implements UserService<U> {
         }));
     }
 
+    public Future<Option<BasicProfile>> find(String providerId, String userId, Messages messages) {
+        return find(providerId, userId);
+    }
+
     /**
      * Finds an Identity by email and provider id.
      * <p>
@@ -84,6 +89,18 @@ public abstract class BaseUserService<U> implements UserService<U> {
     }
 
     /**
+     *
+     * @param user
+     * @param mode
+     * @param messages
+     * @return
+     * TODO Use messages
+     */
+    public Future<U> save(BasicProfile user, SaveMode mode, Messages messages) {
+        return save(user, mode);
+    }
+
+    /**
      * Links the current user Identity to another
      *
      * @param current The Identity of the current user
@@ -92,6 +109,19 @@ public abstract class BaseUserService<U> implements UserService<U> {
     @Override
     public Future<U> link(U current, BasicProfile to) {
         return toScala(doLink(current, to));
+    }
+
+    /**
+     *
+     * @param current
+     * @param to
+     * @param messages
+     * @return
+     * TODO Use messages
+     */
+    @Override
+    public Future<U> link(U current, BasicProfile to, Messages messages) {
+        return link(current, to);
     }
 
     @Override
