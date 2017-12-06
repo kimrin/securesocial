@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 Mikael Vallerie
+ * Copyright 2017 Takeshi Kimura
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,15 @@
  */
 package securesocial.core.providers
 
-import play.api.libs.json.{ Reads, Json, JsValue }
 import play.api.{ Configuration, Environment }
-import play.api.libs.ws.{ WSAuthScheme, WSResponse, WSClient }
-import securesocial.core
+import play.api.libs.ws.WSAuthScheme
 import securesocial.core._
 import securesocial.core.services.{ CacheService, HttpService, RoutesService }
 
 import scala.concurrent.{ ExecutionContext, Future }
-import ChatworkProvider.{ ErrorResponse, UserResponse }
-import ChatworkProvider._
+import ChatWorkProvider._
 
-class ChatworkOAuth2Client(
+class ChatWorkOAuth2Client(
     httpService: HttpService, settings: OAuth2Settings)(implicit executionContext: ExecutionContext) extends OAuth2Client.Default(httpService, settings)(executionContext) {
   override def exchangeCodeForToken(code: String, callBackUrl: String, builder: OAuth2InfoBuilder): Future[OAuth2Info] = {
     val params = Map(
@@ -42,46 +39,46 @@ class ChatworkOAuth2Client(
 
 }
 /**
- * A Chatwork provider
+ * A ChatWork provider
  *
  */
-class ChatworkProvider(routesService: RoutesService,
+class ChatWorkProvider(routesService: RoutesService,
   cacheService: CacheService,
   client: OAuth2Client)(implicit val configuration: Configuration, val playEnv: Environment)
     extends OAuth2Provider.Base(routesService, client, cacheService) {
-  override val id = ChatworkProvider.Chatwork
-  private val Logger = play.api.Logger("securesocial.core.providers.ChatworkProvider")
+  override val id = ChatWorkProvider.ChatWork
 
   override def fillProfile(info: OAuth2Info): Future[BasicProfile] = {
     val accessToken = info.accessToken
-    client.httpService.url(ChatworkProvider.Api).withHeaders("Authorization" -> s"Bearer $accessToken").get().map { response =>
+    client.httpService.url(ChatWorkProvider.Api).withHeaders("Authorization" -> s"Bearer $accessToken").get().map { response =>
       response.status match {
         case 200 =>
           val data = response.json
-          val userId = (data \ ChatworkId).toString
+          val userId = (data \ ChatWorkId).asOpt[String]
           val fullName = (data \ Name).asOpt[String]
           val email = (data \ Email).asOpt[String]
-          BasicProfile(id, userId, None, None, fullName, email, None, authMethod, None, Some(info))
+          val userId2 = userId.getOrElse("<NO USER ID!>")
+          BasicProfile(id, userId2, None, None, fullName, email, None, authMethod, None, Some(info))
         case _ =>
-          Logger.error("[securesocial] Chatwork account info request returned error: " + response.body)
+          logger.error("[securesocial] ChatWork account info request returned error: " + response.body)
           throw new AuthenticationException()
       }
     } recover {
       case e =>
-        Logger.error("[securesocial] error retrieving profile information from Chatwork", e)
+        logger.error("[securesocial] error retrieving profile information from ChatWork", e)
         throw new AuthenticationException()
     }
   }
 }
 
-object ChatworkProvider {
+object ChatWorkProvider {
   val Api = "https://api.chatwork.com/v2/me"
-  val Chatwork = "chatwork"
+  val ChatWork = "chatwork"
   val AccountId = "account_id"
-  val ChatworkId = "chatwork_id"
+  val ChatWorkId = "chatwork_id"
   val Name = "name"
   val Url = "url"
-  val Email = "mail"
+  val Email = "login_mail"
 
   case class ErrorResponse(
     message: String,

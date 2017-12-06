@@ -103,8 +103,8 @@ trait RuntimeEnvironment {
         new TwitterProvider(routes, cacheService, oauth1ClientFor(TwitterProvider.Twitter))
       case XingProvider.Xing =>
         new XingProvider(routes, cacheService, oauth1ClientFor(XingProvider.Xing))
-      case ChatworkProvider.Chatwork =>
-        new ChatworkProvider(routes, cacheService, oauth2ClientFor(ChatworkProvider.Chatwork, customOAuth2Settings))
+      case ChatWorkProvider.ChatWork =>
+        new ChatWorkProvider(routes, cacheService, oauth2ClientFor(ChatWorkProvider.ChatWork, customOAuth2Settings))
       case UsernamePasswordProvider.UsernamePassword =>
         new UsernamePasswordProvider[U](userService, avatarService, viewTemplates, passwordHashers)
       case _ => throw new RuntimeException(s"Invalid provider '$provider'")
@@ -116,8 +116,8 @@ trait RuntimeEnvironment {
     val oauth2SettingsBuilder = new OAuth2SettingsBuilder.Default
     val settings = customSettings.getOrElse(oauth2SettingsBuilder.forProvider(provider))
     provider match {
-      case ChatworkProvider.Chatwork =>
-        new ChatworkOAuth2Client(httpService, settings)
+      case ChatWorkProvider.ChatWork =>
+        new ChatWorkOAuth2Client(httpService, settings)
       case _ => new OAuth2Client.Default(httpService, settings)
     }
   }
@@ -173,7 +173,7 @@ object RuntimeEnvironment {
       LinkedInProvider.LinkedIn,
       TwitterProvider.Twitter,
       XingProvider.Xing,
-      ChatworkProvider.Chatwork,
+      ChatWorkProvider.ChatWork,
       UsernamePasswordProvider.UsernamePassword
     )
   }
