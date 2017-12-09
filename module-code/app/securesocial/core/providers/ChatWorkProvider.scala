@@ -54,14 +54,14 @@ class ChatWorkProvider(routesService: RoutesService,
       response.status match {
         case 200 =>
           val data = response.json
-          val account_id = (data \ AccountId).asOpt[Int].getOrElse(UnknownUserId).toString()
-          val chatwork_id = (data \ ChatWorkId).asOpt[String]
+          val accountId = (data \ AccountId).as[Int].toString()
+          val chatworkId = (data \ ChatWorkId).asOpt[String]
           val fullName = (data \ Name).asOpt[String]
           val email = (data \ Email).asOpt[String]
           val extraInfo = Map(
-            ChatWorkId -> chatwork_id.getOrElse("")
+            ChatWorkId -> chatworkId.getOrElse("")
           )
-          BasicProfile(id, account_id, None, None, fullName, email, None, authMethod, None, Some(info), extraInfo = Some(extraInfo))
+          BasicProfile(id, accountId, None, None, fullName, email, None, authMethod, None, Some(info), extraInfo = Some(extraInfo))
         case _ =>
           logger.error("[securesocial] ChatWork account info request returned error: " + response.body)
           throw new AuthenticationException()
