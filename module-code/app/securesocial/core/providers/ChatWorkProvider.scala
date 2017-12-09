@@ -82,7 +82,6 @@ object ChatWorkProvider {
   val Name = "name"
   val Url = "url"
   val Email = "login_mail"
-  val UnknownUserId = -9999
 
   case class ErrorResponse(
     message: String,
