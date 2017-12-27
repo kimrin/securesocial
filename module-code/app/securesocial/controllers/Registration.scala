@@ -18,14 +18,12 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
-import play.api.{ Environment, Configuration }
 import play.api.data.Forms._
 import play.api.data._
-import play.api.i18n.Messages
+import play.api.i18n.{ Lang, LangImplicits }
 import play.api.mvc.Action
 import play.filters.csrf.{ CSRFCheck, _ }
 import securesocial.core._
-import securesocial.core.authenticator.CookieAuthenticator
 import securesocial.core.providers.UsernamePasswordProvider
 import securesocial.core.providers.utils._
 import securesocial.core.services.SaveMode
@@ -44,7 +42,7 @@ class Registration @Inject() (implicit val env: RuntimeEnvironment, val configur
  *
  * @tparam U the user type
  */
-trait BaseRegistration extends MailTokenBasedOperations {
+trait BaseRegistration extends MailTokenBasedOperations with LangImplicits {
 
   import securesocial.controllers.BaseRegistration._
 
@@ -55,10 +53,11 @@ trait BaseRegistration extends MailTokenBasedOperations {
   val UserName = "userName"
   val FirstName = "firstName"
   val LastName = "lastName"
+  implicit val lang = Lang("en")
 
   val formWithUsername = Form[RegistrationInfo](
     mapping(
-      UserName -> nonEmptyText.verifying(Messages(UserNameAlreadyTaken), userName => {
+      UserName -> nonEmptyText.verifying(messagesApi(UserNameAlreadyTaken)(lang), userName => {
         // todo: see if there's a way to avoid waiting here :-\
         import scala.concurrent.duration._
         Await.result(env.userService.find(providerId, userName), 20.seconds).isEmpty
@@ -69,7 +68,7 @@ trait BaseRegistration extends MailTokenBasedOperations {
         tuple(
           Password1 -> nonEmptyText.verifying(PasswordValidator.constraint),
           Password2 -> nonEmptyText
-        ).verifying(Messages(PasswordsDoNotMatch), passwords => passwords._1 == passwords._2)
+        ).verifying(messagesApi(PasswordsDoNotMatch)(lang), passwords => passwords._1 == passwords._2)
     ) // binding
     ((userName, firstName, lastName, password) => RegistrationInfo(Some(userName), firstName, lastName, password._1)) // unbinding
     (info => Some((info.userName.getOrElse(""), info.firstName, info.lastName, ("", ""))))
@@ -83,7 +82,7 @@ trait BaseRegistration extends MailTokenBasedOperations {
         tuple(
           Password1 -> nonEmptyText.verifying(PasswordValidator.constraint),
           Password2 -> nonEmptyText
-        ).verifying(Messages(PasswordsDoNotMatch), passwords => passwords._1 == passwords._2)
+        ).verifying(messagesApi(PasswordsDoNotMatch)(lang), passwords => passwords._1 == passwords._2)
     ) // binding
     ((firstName, lastName, password) => RegistrationInfo(None, firstName, lastName, password._1)) // unbinding
     (info => Some((info.firstName, info.lastName, ("", ""))))
@@ -131,7 +130,8 @@ trait BaseRegistration extends MailTokenBasedOperations {
                       env.userService.saveToken(token)
                     }
                 }
-                handleStartResult().flashing(Success -> Messages(ThankYouCheckEmail), Email -> email)
+                val lang = request.lang
+                handleStartResult().flashing(Success -> messagesApi(ThankYouCheckEmail)(lang), Email -> email)
             }
           }
         )
@@ -196,20 +196,21 @@ trait BaseRegistration extends MailTokenBasedOperations {
                   if (env.usernamePasswordProviderConfigurations.sendWelcomeEmail)
                     env.mailer.sendWelcomeEmail(newUser)
                   val eventSession = Events.fire(new SignUpEvent(saved)).getOrElse(request.session)
+                  val lang = request.lang
                   if (env.usernamePasswordProviderConfigurations.signupSkipLogin) {
                     env.authenticatorService.find(env.cookieAuthenticatorConfigurations.Id).map {
                       _.fromUser(saved).flatMap { authenticator =>
                         confirmationResult()
-                          .flashing(Success -> Messages(SignUpDone))
+                          .flashing(Success -> messagesApi(SignUpDone)(lang))
                           .withSession(eventSession - SecureSocial.OriginalUrlKey - IdentityProvider.SessionId)
                           .startingAuthenticator(authenticator)
                       }
                     } getOrElse {
                       logger.error("[securesocial] There isn't CookieAuthenticator registered in the RuntimeEnvironment")
-                      Future.successful(confirmationResult().flashing(Error -> Messages("There was an error signing you up")))
+                      Future.successful(confirmationResult().flashing(Error -> messagesApi("There was an error signing you up")(lang)))
                     }
                   } else {
-                    Future.successful(confirmationResult().flashing(Success -> Messages(SignUpDone)).withSession(eventSession))
+                    Future.successful(confirmationResult().flashing(Success -> messagesApi(SignUpDone)(lang)).withSession(eventSession))
                   }
                 }
                 result.flatMap(f => f)

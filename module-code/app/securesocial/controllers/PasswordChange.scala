@@ -18,12 +18,13 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
-import play.api.{ Configuration, Application, Environment }
+import play.api.{ Application, Configuration, Environment }
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.Messages
+import play.api.i18n.{ DefaultLangs, Langs, MessagesApi }
 import play.api.mvc.Result
 import play.filters.csrf.{ CSRFCheck, _ }
+import play.i18n.Langs
 import securesocial.core.SecureSocial._
 import securesocial.core._
 import securesocial.core.providers.utils.PasswordValidator
@@ -80,10 +81,11 @@ trait BasePasswordChange extends SecureSocial {
   }
 
   private def execute[A](f: Form[ChangeInfo] => Future[Result])(implicit request: SecuredRequest[A, env.U]): Future[Result] = {
+    implicit val lang = Lang("en")
     val form = Form[ChangeInfo](
       mapping(
         CurrentPassword ->
-          nonEmptyText.verifying(Messages(InvalidPasswordMessage), { suppliedPassword =>
+          nonEmptyText.verifying(messagesApi(InvalidPasswordMessage)(lang), { suppliedPassword =>
             import scala.concurrent.duration._
             Await.result(checkCurrentPassword(suppliedPassword), 10.seconds)
           }),
@@ -91,7 +93,7 @@ trait BasePasswordChange extends SecureSocial {
           tuple(
             Password1 -> nonEmptyText.verifying(PasswordValidator.constraint),
             Password2 -> nonEmptyText
-          ).verifying(Messages(BaseRegistration.PasswordsDoNotMatch), passwords => passwords._1 == passwords._2)
+          ).verifying(messagesApi(BaseRegistration.PasswordsDoNotMatch)(lang), passwords => passwords._1 == passwords._2)
 
       )((currentPassword, newPassword) => ChangeInfo(currentPassword, newPassword._1))((changeInfo: ChangeInfo) => Some(("", ("", ""))))
     )
@@ -136,13 +138,14 @@ trait BasePasswordChange extends SecureSocial {
           info => {
             val newPasswordInfo = env.currentHasher.hash(info.newPassword)
             val userLang = request2lang(request)
+            implicit val lang = Lang("en")
             env.userService.updatePasswordInfo(request.user, newPasswordInfo).map {
               case Some(u) =>
                 env.mailer.sendPasswordChangedNotice(u)(request, userLang)
-                val result = Redirect(onHandlePasswordChangeGoTo).flashing(Success -> Messages(OkMessage))
+                val result = Redirect(onHandlePasswordChangeGoTo).flashing(Success -> messagesApi(OkMessage)(lang))
                 Events.fire(new PasswordChangeEvent(request.user)).map(result.withSession).getOrElse(result)
               case None =>
-                Redirect(onHandlePasswordChangeGoTo).flashing(Error -> Messages("securesocial.password.error"))
+                Redirect(onHandlePasswordChangeGoTo).flashing(Error -> messagesApi("securesocial.password.error")(lang))
             }
           }
         )

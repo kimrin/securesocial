@@ -18,7 +18,7 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
-import play.api.{ Configuration, Application, Environment }
+import play.api.{ Configuration, Environment }
 import play.filters.csrf.CSRFAddToken
 import securesocial.core._
 import securesocial.core.providers.UsernamePasswordProvider

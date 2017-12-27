@@ -17,6 +17,7 @@ crossScalaVersions := Seq("2.11.8")
 
 libraryDependencies ++= Seq(
   ws,
+  guice,
   filters,
   openId,
   ehcache,

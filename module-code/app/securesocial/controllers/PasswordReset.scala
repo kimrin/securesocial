@@ -21,7 +21,7 @@ import javax.inject.Inject
 import play.api.{ Configuration, Environment }
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.Messages
+import play.api.i18n.{ DefaultLangs, Lang, LangImplicits, MessagesApi }
 import play.api.mvc.Action
 import play.filters.csrf.{ CSRFCheck, _ }
 import securesocial.core._
@@ -42,18 +42,18 @@ class PasswordReset @Inject() (implicit val env: RuntimeEnvironment, val configu
  * The trait that provides the Password Reset functionality
  *
  */
-trait BasePasswordReset extends MailTokenBasedOperations {
+trait BasePasswordReset extends MailTokenBasedOperations with LangImplicits {
   private val logger = play.api.Logger("securesocial.controllers.BasePasswordReset")
 
   val PasswordUpdated = "securesocial.password.passwordUpdated"
   val ErrorUpdatingPassword = "securesocial.password.error"
-
+  implicit val lang = Lang("en")
   val changePasswordForm = Form(
     BaseRegistration.Password ->
       tuple(
         BaseRegistration.Password1 -> nonEmptyText.verifying(PasswordValidator.constraint),
         BaseRegistration.Password2 -> nonEmptyText
-      ).verifying(Messages(BaseRegistration.PasswordsDoNotMatch), passwords => passwords._1 == passwords._2)
+      ).verifying(messagesApi(BaseRegistration.PasswordsDoNotMatch)(lang), passwords => passwords._1 == passwords._2)
   )
 
   implicit val CSRFAddToken: CSRFAddToken
@@ -91,7 +91,7 @@ trait BasePasswordReset extends MailTokenBasedOperations {
                   case None =>
                     env.mailer.sendUnkownEmailNotice(email)
                 }
-                handleStartResult().flashing(Success -> Messages(BaseRegistration.ThankYouCheckEmail))
+                handleStartResult().flashing(Success -> messagesApi(BaseRegistration.ThankYouCheckEmail)(lang))
             }
           }
         )
@@ -135,11 +135,11 @@ trait BasePasswordReset extends MailTokenBasedOperations {
                   ) yield {
                     env.mailer.sendPasswordChangedNotice(profile)
                     val eventSession = Events.fire(new PasswordResetEvent(updated)).getOrElse(request.session)
-                    confirmationResult().withSession(eventSession).flashing(Success -> Messages(PasswordUpdated))
+                    confirmationResult().withSession(eventSession).flashing(Success -> messagesApi(PasswordUpdated)(lang))
                   }
                 case _ =>
                   logger.error("[securesocial] could not find user with email %s during password reset".format(t.email))
-                  Future.successful(confirmationResult().flashing(Error -> Messages(ErrorUpdatingPassword)))
+                  Future.successful(confirmationResult().flashing(Error -> messagesApi(ErrorUpdatingPassword)(lang)))
               }
           )
       })
