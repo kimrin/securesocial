@@ -17,11 +17,12 @@
 package securesocial.core
 
 import _root_.java.util.UUID
-import play.api.{ Environment, Configuration }
+
+import play.api.{ Configuration, Environment }
 import play.api.libs.oauth._
 import play.api.mvc.{ AnyContent, Request }
 import play.api.mvc.Results.Redirect
-import oauth.signpost.exception.OAuthException
+import play.shaded.oauth.oauth.signpost.exception.OAuthException
 import scala.concurrent.{ ExecutionContext, Future }
 import securesocial.core.services.{ HttpService, RoutesService, CacheService }
 import play.api.libs.oauth.OAuth

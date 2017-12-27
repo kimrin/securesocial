@@ -21,10 +21,9 @@ import javax.inject.Inject
 import play.api.{ Application, Configuration, Environment }
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.{ DefaultLangs, Langs, MessagesApi }
+import play.api.i18n.{ DefaultLangs, Langs, MessagesApi, Lang }
 import play.api.mvc.Result
 import play.filters.csrf.{ CSRFCheck, _ }
-import play.i18n.Langs
 import securesocial.core.SecureSocial._
 import securesocial.core._
 import securesocial.core.providers.utils.PasswordValidator
