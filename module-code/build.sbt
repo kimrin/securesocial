@@ -16,10 +16,13 @@ crossScalaVersions := Seq("2.11.8")
 //PlayKeys.generateRefReverseRouter := false
 
 libraryDependencies ++= Seq(
-  cache,
   ws,
   filters,
+  openId,
+  ehcache,
+  cacheApi,
   specs2 % "test",
+  "com.typesafe.play" %% "play-json" % "2.6.0",
   "com.typesafe.play" %% "play-mailer" % "5.0.0",
   "org.mindrot" % "jbcrypt" % "0.3m"
 )
