@@ -18,6 +18,7 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
+import play.api.mvc.{ AnyContent, BodyParser, ControllerComponents }
 import play.api.{ Configuration, Environment }
 import play.filters.csrf.CSRFAddToken
 import securesocial.core._
@@ -31,20 +32,20 @@ import scala.concurrent.Future
  *
  * @param env An environment
  */
-class LoginPage @Inject() (override implicit val env: RuntimeEnvironment, override val configuration: Configuration, override val playEnv: Environment, val CSRFAddToken: CSRFAddToken) extends BaseLoginPage
+class LoginPage @Inject() (implicit val env: RuntimeEnvironment,
+  val configuration: Configuration,
+  val playEnv: Environment,
+  implicit val CSRFAddToken: CSRFAddToken,
+  implicit val controllerComponents: ControllerComponents,
+  implicit val parser: BodyParser[AnyContent])
+    extends SecureSocial {
 
-/**
- * The trait that defines the login page controller
- */
-trait BaseLoginPage extends SecureSocial {
   private val logger = play.api.Logger("securesocial.controllers.LoginPage")
 
   /**
    * The property that specifies the page the user is redirected to after logging out.
    */
   val onLogoutGoTo = "securesocial.onLogoutGoTo"
-
-  implicit val CSRFAddToken: CSRFAddToken
 
   /**
    * Renders the login page
@@ -65,6 +66,7 @@ trait BaseLoginPage extends SecureSocial {
         logger.debug("User already logged in, skipping login page. Redirecting to %s".format(to))
         Redirect(to)
       } else {
+        implicit val lang = request.lang
         if (enableRefererAsOriginalUrl) {
           SecureSocial.withRefererAsOriginalUrl(Ok(env.viewTemplates.getLoginPage(UsernamePasswordProvider.loginForm)))
         } else {

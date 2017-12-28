@@ -16,15 +16,18 @@
 package securesocial.core.java;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import play.i18n.Lang;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.twirl.api.Html;
+import play.i18n.MessagesApi;
 
 import javax.inject.Inject;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+
 
 /**
  * The default responses sent when the invoker is not authenticated or authorized to execute a protected
@@ -36,6 +39,9 @@ public class DefaultSecuredActionResponses extends Controller implements Secured
     @Inject
     play.api.i18n.Messages messages = null;
 
+    @Inject
+    MessagesApi messagesApi = null;
+
     public Html notAuthorizedPage(Http.Context ctx) {
         return securesocial.views.html.notAuthorized.render(ctx._requestHeader(), ctx.lang(), SecureSocial.env(), messages);
     }
@@ -45,7 +51,7 @@ public class DefaultSecuredActionResponses extends Controller implements Secured
         Result result;
 
         if (req.accepts("text/html")) {
-            ctx.flash().put("error", play.i18n.Messages.get("securesocial.loginRequired"));
+            ctx.flash().put("error", messagesApi.get(Lang.defaultLang(),"securesocial.loginRequired"));
             ctx.session().put(SecureSocial.ORIGINAL_URL, ctx.request().uri());
             result = redirect(SecureSocial.env().routes().loginPageUrl(ctx._requestHeader()));
         } else if (req.accepts("application/json")) {

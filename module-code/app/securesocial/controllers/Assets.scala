@@ -25,8 +25,9 @@ package securesocial.controllers {
 
 
   import akka.stream.scaladsl.StreamConverters
+  import play.api
   import play.api.http._
-  import play.api.inject.{ ApplicationLifecycle, Module }
+  import play.api.inject.{ApplicationLifecycle, Module}
 
   class AssetsModule extends Module {
     override def bindings(environment: Environment, configuration: Configuration) = Seq(
@@ -390,7 +391,6 @@ package securesocial.controllers {
                                resource: String => Option[URL],
                                fileMimeTypes: FileMimeTypes
                              )(implicit ec: ExecutionContext) extends AssetsMetadata {
-
     @Inject
     def this(env: Environment, config: AssetsConfiguration, fileMimeTypes: FileMimeTypes)(implicit ec: ExecutionContext) = this(config, env.resource _, fileMimeTypes)
 
@@ -459,7 +459,6 @@ package securesocial.controllers {
         new AssetInfo(name, url, compressionUrls, digest(name), config, fileMimeTypes)
       }
     }
-
     private def assetInfo(name: String)(implicit ec: ExecutionContext): Future[Option[AssetInfo]] = {
       if (config.enableCaching) {
         assetInfoCache.putIfAbsent(name)(assetInfoFromResource)
@@ -469,7 +468,7 @@ package securesocial.controllers {
     }
 
     private[controllers] def assetInfoForRequest(
-                                                  request: RequestHeader, name: String)(implicit ec: ExecutionContext): Future[Option[(AssetInfo, AcceptEncoding)]] = {
+                                                  request: RequestHeader, name: String): Future[Option[(AssetInfo, AcceptEncoding)]] = {
       assetInfo(name).map(_.map(_ -> AcceptEncoding.forRequest(request)))
     }
   }
@@ -697,7 +696,7 @@ package securesocial.controllers {
     import meta._
     import Assets._
 
-    private val Action = new ActionBuilder.IgnoringBody()()
+    private val Action = new api.mvc.ActionBuilder.IgnoringBody()
 
     private def maybeNotModified(request: RequestHeader, assetInfo: AssetInfo, aggressiveCaching: Boolean): Option[Result] = {
       // First check etag. Important, if there is an If-None-Match header, we MUST not check the

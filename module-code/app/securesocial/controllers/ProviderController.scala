@@ -32,13 +32,12 @@ import scala.concurrent.Future
 /**
  * A default controller that uses the BasicProfile as the user type
  */
-class ProviderController @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment)
-  extends BaseProviderController
-
-/**
- * A trait that provides the means to authenticate users for web applications
- */
-trait BaseProviderController extends SecureSocial {
+class ProviderController @Inject() (implicit val env: RuntimeEnvironment,
+  val configuration: Configuration,
+  val playEnv: Environment,
+  implicit val controllerComponents: ControllerComponents,
+  implicit val parser: BodyParser[AnyContent])
+    extends SecureSocial {
 
   import securesocial.controllers.ProviderControllerHelper.{ logger, toUrl }
 

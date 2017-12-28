@@ -21,8 +21,8 @@ import javax.inject.Inject
 import play.api.{ Application, Configuration, Environment }
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.i18n.{ DefaultLangs, Langs, MessagesApi, Lang }
-import play.api.mvc.Result
+import play.api.i18n.{ DefaultLangs, Lang, Langs, MessagesApi }
+import play.api.mvc.{ AnyContent, BodyParser, ControllerComponents, Result }
 import play.filters.csrf.{ CSRFCheck, _ }
 import securesocial.core.SecureSocial._
 import securesocial.core._
@@ -35,13 +35,15 @@ import scala.concurrent.{ Await, Future }
  *
  * @param env An environment
  */
-class PasswordChange @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment, val CSRFAddToken: CSRFAddToken, val CSRFCheck: CSRFCheck) extends BasePasswordChange
+class PasswordChange @Inject() (implicit val env: RuntimeEnvironment,
+  val configuration: Configuration,
+  val playEnv: Environment,
+  val CSRFAddToken: CSRFAddToken,
+  val CSRFCheck: CSRFCheck,
+  implicit val controllerComponents: ControllerComponents,
+  implicit val parser: BodyParser[AnyContent])
+    extends SecureSocial {
 
-/**
- * A trait that defines the password change functionality
- *
- */
-trait BasePasswordChange extends SecureSocial {
   val CurrentPassword = "currentPassword"
   val InvalidPasswordMessage = "securesocial.passwordChange.invalidPassword"
   val NewPassword = "newPassword"
@@ -105,8 +107,6 @@ trait BasePasswordChange extends SecureSocial {
     }
   }
 
-  implicit val CSRFAddToken: CSRFAddToken
-
   /**
    * Renders the password change page
    *
@@ -116,13 +116,12 @@ trait BasePasswordChange extends SecureSocial {
     SecuredAction.async { implicit request =>
       execute { form: Form[ChangeInfo] =>
         Future.successful {
+          implicit val lang = request.lang
           Ok(env.viewTemplates.getPasswordChangePage(form))
         }
       }
     }
   }
-
-  implicit val CSRFCheck: CSRFCheck
 
   /**
    * Handles form submission from the password change page
@@ -132,19 +131,19 @@ trait BasePasswordChange extends SecureSocial {
   def handlePasswordChange = CSRFCheck {
     SecuredAction.async { implicit request =>
       execute { form: Form[ChangeInfo] =>
+        implicit val lang = request.lang
         form.bindFromRequest()(request).fold(
           errors => Future.successful(BadRequest(env.viewTemplates.getPasswordChangePage(errors))),
           info => {
             val newPasswordInfo = env.currentHasher.hash(info.newPassword)
-            val userLang = request2lang(request)
-            implicit val lang = Lang("en")
+            val userLang = request.lang
             env.userService.updatePasswordInfo(request.user, newPasswordInfo).map {
               case Some(u) =>
                 env.mailer.sendPasswordChangedNotice(u)(request, userLang)
-                val result = Redirect(onHandlePasswordChangeGoTo).flashing(Success -> messagesApi(OkMessage)(lang))
+                val result = Redirect(onHandlePasswordChangeGoTo).flashing(Success -> messagesApi(OkMessage)(userLang))
                 Events.fire(new PasswordChangeEvent(request.user)).map(result.withSession).getOrElse(result)
               case None =>
-                Redirect(onHandlePasswordChangeGoTo).flashing(Error -> messagesApi("securesocial.password.error")(lang))
+                Redirect(onHandlePasswordChangeGoTo).flashing(Error -> messagesApi("securesocial.password.error")(userLang))
             }
           }
         )

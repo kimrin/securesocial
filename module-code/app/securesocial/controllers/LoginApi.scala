@@ -19,9 +19,12 @@ package securesocial.controllers
 import javax.inject.Inject
 
 import org.joda.time.DateTime
+import play.api.i18n.MessagesApi
 import play.api.{ Configuration, Environment }
 import securesocial.core._
-import play.api.mvc.Action
+import play.api.mvc._
+import play.api.i18n.Langs
+
 import scala.concurrent.{ ExecutionContext, Future }
 import securesocial.core.SignUpEvent
 import securesocial.core.AuthenticationResult.Authenticated
@@ -32,13 +35,16 @@ import securesocial.core.services.SaveMode
 /**
  * A default controller that uses the BasicProfile as the application user type.
  */
-class LoginApi @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment) extends BaseLoginApi
+class LoginApi @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment,
+    langs: Langs,
+    action: DefaultActionBuilder,
+    parsers: PlayBodyParsers,
+    messagesApi: MessagesApi,
+    implicit val parser: BodyParser[AnyContent]) extends SecureSocial {
 
-/**
- * This trait provides the means to provide an authentication API that can be used by client side or mobile apps.
- *
- */
-trait BaseLoginApi extends SecureSocial {
+  val controllerComponents: ControllerComponents = DefaultControllerComponents(
+    action, parsers, messagesApi, langs, fileMimeTypes, executionContext
+  )
 
   import play.api.libs.json._
 

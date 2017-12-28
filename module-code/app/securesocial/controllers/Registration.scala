@@ -18,10 +18,11 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
+import play.api.{ Configuration, Environment }
 import play.api.data.Forms._
 import play.api.data._
 import play.api.i18n.{ Lang, LangImplicits }
-import play.api.mvc.Action
+import play.api.mvc.{ Action, AnyContent, BodyParser, ControllerComponents }
 import play.filters.csrf.{ CSRFCheck, _ }
 import securesocial.core._
 import securesocial.core.providers.UsernamePasswordProvider
@@ -35,14 +36,14 @@ import scala.concurrent.{ Await, Future }
  *
  * @param env the environment
  */
-class Registration @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment, val CSRFAddToken: CSRFAddToken, val CSRFCheck: CSRFCheck) extends BaseRegistration
-
-/**
- * A trait that provides the means to handle user registration
- *
- * @tparam U the user type
- */
-trait BaseRegistration extends MailTokenBasedOperations with LangImplicits {
+class Registration @Inject() (implicit val env: RuntimeEnvironment,
+  val configuration: Configuration,
+  val playEnv: Environment,
+  val CSRFAddToken: CSRFAddToken,
+  val CSRFCheck: CSRFCheck,
+  implicit val controllerComponents: ControllerComponents,
+  implicit val parser: BodyParser[AnyContent])
+    extends MailTokenBasedOperations with LangImplicits {
 
   import securesocial.controllers.BaseRegistration._
 
@@ -90,8 +91,6 @@ trait BaseRegistration extends MailTokenBasedOperations with LangImplicits {
 
   val form = if (env.usernamePasswordProviderConfigurations.withUserNameSupport) formWithUsername else formWithoutUsername
 
-  implicit val CSRFAddToken: CSRFAddToken
-
   /**
    * Starts the sign up process
    */
@@ -106,11 +105,10 @@ trait BaseRegistration extends MailTokenBasedOperations with LangImplicits {
     }
   }
 
-  implicit val CSRFCheck: CSRFCheck
-
   def handleStartSignUp = CSRFCheck {
     Action.async {
       implicit request =>
+        implicit val lang = request.lang
         startForm.bindFromRequest.fold(
           errors => {
             Future.successful(BadRequest(env.viewTemplates.getStartSignUpPage(errors)))
@@ -130,7 +128,6 @@ trait BaseRegistration extends MailTokenBasedOperations with LangImplicits {
                       env.userService.saveToken(token)
                     }
                 }
-                val lang = request.lang
                 handleStartResult().flashing(Success -> messagesApi(ThankYouCheckEmail)(lang), Email -> email)
             }
           }
@@ -160,6 +157,7 @@ trait BaseRegistration extends MailTokenBasedOperations with LangImplicits {
   def handleSignUp(token: String) = CSRFCheck {
     Action.async {
       implicit request =>
+        implicit val lang = request.lang
         executeForToken(token, true, {
           t =>
             form.bindFromRequest.fold(
@@ -196,7 +194,6 @@ trait BaseRegistration extends MailTokenBasedOperations with LangImplicits {
                   if (env.usernamePasswordProviderConfigurations.sendWelcomeEmail)
                     env.mailer.sendWelcomeEmail(newUser)
                   val eventSession = Events.fire(new SignUpEvent(saved)).getOrElse(request.session)
-                  val lang = request.lang
                   if (env.usernamePasswordProviderConfigurations.signupSkipLogin) {
                     env.authenticatorService.find(env.cookieAuthenticatorConfigurations.Id).map {
                       _.fromUser(saved).flatMap { authenticator =>

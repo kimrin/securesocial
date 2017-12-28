@@ -35,7 +35,7 @@ import scala.concurrent.{ ExecutionContext, Future }
  * if available.
  *
  */
-trait SecureSocial extends Controller with I18nSupport {
+trait SecureSocial extends BaseController with I18nSupport {
   import SecureSocial._
 
   implicit val configuration: Configuration
@@ -50,10 +50,15 @@ trait SecureSocial extends Controller with I18nSupport {
 
   protected val notAuthorizedJson = Forbidden(Json.toJson(Map("error" -> "Not authorized"))).as(JSON)
 
-  protected def notAuthorizedPage()(implicit request: RequestHeader): Html = env.viewTemplates.getNotAuthorizedPage
+  implicit val parser: BodyParser[AnyContent]
 
-  @Inject
-  implicit var messagesApi: MessagesApi = null
+  protected def notAuthorizedPage()(implicit request: RequestHeader): Html = {
+    implicit val lang = request.lang
+    env.viewTemplates.getNotAuthorizedPage
+  }
+
+  //  @Inject
+  //  override implicit var messagesApi: MessagesApi = null
 
   protected def notAuthenticatedResult[A](implicit request: Request[A]): Future[Result] = {
     Future.successful {
@@ -85,14 +90,14 @@ trait SecureSocial extends Controller with I18nSupport {
     /**
      * Creates a secured action
      */
-    def apply[A]() = new SecuredActionBuilder(None)
+    def apply[A]() = new SecuredActionBuilder()
 
     /**
      * Creates a secured action
      *
      * @param authorize an Authorize object that checks if the user is authorized to invoke the action
      */
-    def apply[A](authorize: Authorization[env.U]) = new SecuredActionBuilder(Some(authorize))
+    def apply[A](authorize: Authorization[env.U]) = new SecuredActionBuilder()
   }
 
   /**
@@ -100,8 +105,8 @@ trait SecureSocial extends Controller with I18nSupport {
    *
    * @param authorize an Authorize object that checks if the user is authorized to invoke the action
    */
-  class SecuredActionBuilder(authorize: Option[Authorization[env.U]] = None)
-      extends ActionBuilder[({ type R[A] = SecuredRequest[A, env.U] })#R] {
+  class SecuredActionBuilder @Inject() (implicit val parser: BodyParser[AnyContent], implicit val authorize: Option[Authorization[env.U]] = None)
+      extends ActionBuilder[({ type R[A] = SecuredRequest[A, env.U] })#R, AnyContent] {
 
     override protected implicit def executionContext: ExecutionContext = env.executionContext
 
@@ -146,8 +151,8 @@ trait SecureSocial extends Controller with I18nSupport {
   /**
    * The UserAwareAction builder
    */
-  class UserAwareActionBuilder extends ActionBuilder[({ type R[A] = RequestWithUser[A, env.U] })#R] {
-    override protected implicit def executionContext: ExecutionContext = env.executionContext
+  class UserAwareActionBuilder @Inject() (implicit val parser: BodyParser[AnyContent]) extends ActionBuilder[({ type R[A] = RequestWithUser[A, env.U] })#R, AnyContent] {
+    protected implicit def executionContext: ExecutionContext = env.executionContext
 
     override def invokeBlock[A](request: Request[A],
       block: (RequestWithUser[A, env.U]) => Future[Result]): Future[Result] = {

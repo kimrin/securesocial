@@ -22,8 +22,9 @@ import play.api.{ Configuration, Environment }
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.{ DefaultLangs, Lang, LangImplicits, MessagesApi }
-import play.api.mvc.Action
+import play.api.mvc.{ Action, AnyContent, BodyParser, ControllerComponents }
 import play.filters.csrf.{ CSRFCheck, _ }
+import play.i18n.Langs
 import securesocial.core._
 import securesocial.core.providers.UsernamePasswordProvider
 import securesocial.core.providers.utils.PasswordValidator
@@ -36,18 +37,24 @@ import scala.concurrent.Future
  *
  * @param env an environment
  */
-class PasswordReset @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment, val CSRFAddToken: CSRFAddToken, val CSRFCheck: CSRFCheck) extends BasePasswordReset
 
 /**
  * The trait that provides the Password Reset functionality
  *
  */
-trait BasePasswordReset extends MailTokenBasedOperations with LangImplicits {
-  private val logger = play.api.Logger("securesocial.controllers.BasePasswordReset")
+class PasswordReset @Inject() (implicit val lang: Lang,
+  implicit val env: RuntimeEnvironment,
+  val configuration: Configuration,
+  val playEnv: Environment,
+  val CSRFAddToken: CSRFAddToken,
+  val CSRFCheck: CSRFCheck,
+  implicit val controllerComponents: ControllerComponents,
+  implicit val parser: BodyParser[AnyContent])
+    extends MailTokenBasedOperations with LangImplicits {
 
+  private val logger = play.api.Logger("securesocial.controllers.BasePasswordReset")
   val PasswordUpdated = "securesocial.password.passwordUpdated"
   val ErrorUpdatingPassword = "securesocial.password.error"
-  implicit val lang = Lang("en")
   val changePasswordForm = Form(
     BaseRegistration.Password ->
       tuple(
@@ -55,8 +62,6 @@ trait BasePasswordReset extends MailTokenBasedOperations with LangImplicits {
         BaseRegistration.Password2 -> nonEmptyText
       ).verifying(messagesApi(BaseRegistration.PasswordsDoNotMatch)(lang), passwords => passwords._1 == passwords._2)
   )
-
-  implicit val CSRFAddToken: CSRFAddToken
 
   /**
    * Renders the page that starts the password reset flow
@@ -67,8 +72,6 @@ trait BasePasswordReset extends MailTokenBasedOperations with LangImplicits {
         Ok(env.viewTemplates.getStartResetPasswordPage(startForm))
     }
   }
-
-  implicit val CSRFCheck: CSRFCheck
 
   /**
    * Handles form submission for the start page
