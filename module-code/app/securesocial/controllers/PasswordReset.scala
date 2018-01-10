@@ -18,10 +18,13 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
+import akka.stream.Materializer
 import play.api.{ Configuration, Environment }
 import play.api.data.Form
 import play.api.data.Forms._
+import play.api.http.{ FileMimeTypes, HttpErrorHandler, ParserConfiguration }
 import play.api.i18n.{ DefaultLangs, Lang, LangImplicits, MessagesApi }
+import play.api.libs.Files.TemporaryFileCreator
 import play.api.mvc.{ Action, AnyContent, BodyParser, ControllerComponents }
 import play.filters.csrf.{ CSRFCheck, _ }
 import play.i18n.Langs
@@ -43,14 +46,19 @@ import scala.concurrent.Future
  *
  */
 class PasswordReset @Inject() (implicit val lang: Lang,
-  implicit val env: RuntimeEnvironment,
-  val configuration: Configuration,
-  val playEnv: Environment,
-  val CSRFAddToken: CSRFAddToken,
-  val CSRFCheck: CSRFCheck,
-  implicit val controllerComponents: ControllerComponents,
-  implicit val parser: BodyParser[AnyContent])
-    extends MailTokenBasedOperations with LangImplicits {
+    implicit val env: RuntimeEnvironment,
+    val configuration: Configuration,
+    val playEnv: Environment,
+    val CSRFAddToken: CSRFAddToken,
+    val CSRFCheck: CSRFCheck,
+    implicit val controllerComponents: ControllerComponents,
+    implicit val messagesApi: MessagesApi,
+    implicit val parser: BodyParser[AnyContent],
+    implicit val fileMimeTypes: FileMimeTypes,
+    implicit val config: ParserConfiguration,
+    implicit val errorHandler: HttpErrorHandler,
+    implicit val materializer: Materializer,
+    implicit val temporaryFileCreator: TemporaryFileCreator) extends MailTokenBasedOperations with LangImplicits {
 
   private val logger = play.api.Logger("securesocial.controllers.BasePasswordReset")
   val PasswordUpdated = "securesocial.password.passwordUpdated"

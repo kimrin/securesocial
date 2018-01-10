@@ -18,12 +18,15 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
+import akka.stream.Materializer
 import org.joda.time.DateTime
+import play.api.http.{ FileMimeTypes, HttpErrorHandler, ParserConfiguration }
 import play.api.i18n.MessagesApi
 import play.api.{ Configuration, Environment }
 import securesocial.core._
 import play.api.mvc._
 import play.api.i18n.Langs
+import play.api.libs.Files.TemporaryFileCreator
 
 import scala.concurrent.{ ExecutionContext, Future }
 import securesocial.core.SignUpEvent
@@ -39,8 +42,13 @@ class LoginApi @Inject() (implicit val env: RuntimeEnvironment, val configuratio
     langs: Langs,
     action: DefaultActionBuilder,
     parsers: PlayBodyParsers,
-    messagesApi: MessagesApi,
-    implicit val parser: BodyParser[AnyContent]) extends SecureSocial {
+    implicit val messagesApi: MessagesApi,
+    implicit val parser: BodyParser[AnyContent],
+    implicit val fileMimeTypes: FileMimeTypes,
+    implicit val config: ParserConfiguration,
+    implicit val errorHandler: HttpErrorHandler,
+    implicit val materializer: Materializer,
+    implicit val temporaryFileCreator: TemporaryFileCreator) extends SecureSocial {
 
   val controllerComponents: ControllerComponents = DefaultControllerComponents(
     action, parsers, messagesApi, langs, fileMimeTypes, executionContext

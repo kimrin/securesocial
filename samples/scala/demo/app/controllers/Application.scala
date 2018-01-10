@@ -18,12 +18,28 @@ package controllers
 
 import javax.inject.Inject
 
+import akka.stream.Materializer
+import play.api.http.{ FileMimeTypes, HttpErrorHandler, ParserConfiguration }
+import play.api.i18n.MessagesApi
+import play.api.libs.Files.TemporaryFileCreator
 import securesocial.core._
-import service.{ MyEnvironment, MyEventListener, DemoUser }
+import service.{ DemoUser, MyEnvironment, MyEventListener }
 import play.api.{ Configuration, Environment }
-import play.api.mvc.{ Action, RequestHeader }
+import play.api.mvc._
 
-class Application @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment) extends securesocial.core.SecureSocial {
+class Application @Inject() (implicit val env: RuntimeEnvironment,
+  val configuration: Configuration,
+  val playEnv: Environment,
+  implicit val controllerComponents: ControllerComponents,
+  implicit val action: DefaultActionBuilder,
+  implicit val parser: BodyParser[AnyContent],
+  implicit val messagesApi: MessagesApi,
+  implicit val fileMimeTypes: FileMimeTypes,
+  implicit val config: ParserConfiguration,
+  implicit val errorHandler: HttpErrorHandler,
+  implicit val materializer: Materializer,
+  implicit val temporaryFileCreator: TemporaryFileCreator)
+    extends securesocial.core.SecureSocial {
   def index = SecuredAction { implicit request =>
     Ok(views.html.index(request.user.asInstanceOf[DemoUser].main))
   }

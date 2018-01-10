@@ -18,10 +18,13 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
+import akka.stream.Materializer
 import play.api.{ Configuration, Environment }
 import play.api.data.Forms._
 import play.api.data._
-import play.api.i18n.{ Lang, LangImplicits }
+import play.api.http.{ FileMimeTypes, HttpErrorHandler, ParserConfiguration }
+import play.api.i18n.{ Lang, LangImplicits, MessagesApi }
+import play.api.libs.Files.TemporaryFileCreator
 import play.api.mvc.{ Action, AnyContent, BodyParser, ControllerComponents }
 import play.filters.csrf.{ CSRFCheck, _ }
 import securesocial.core._
@@ -37,13 +40,18 @@ import scala.concurrent.{ Await, Future }
  * @param env the environment
  */
 class Registration @Inject() (implicit val env: RuntimeEnvironment,
-  val configuration: Configuration,
-  val playEnv: Environment,
-  val CSRFAddToken: CSRFAddToken,
-  val CSRFCheck: CSRFCheck,
-  implicit val controllerComponents: ControllerComponents,
-  implicit val parser: BodyParser[AnyContent])
-    extends MailTokenBasedOperations with LangImplicits {
+    val configuration: Configuration,
+    val playEnv: Environment,
+    val CSRFAddToken: CSRFAddToken,
+    val CSRFCheck: CSRFCheck,
+    implicit val controllerComponents: ControllerComponents,
+    implicit val parser: BodyParser[AnyContent],
+    implicit val messagesApi: MessagesApi,
+    implicit val fileMimeTypes: FileMimeTypes,
+    implicit val config: ParserConfiguration,
+    implicit val errorHandler: HttpErrorHandler,
+    implicit val materializer: Materializer,
+    implicit val temporaryFileCreator: TemporaryFileCreator) extends MailTokenBasedOperations with LangImplicits {
 
   import securesocial.controllers.BaseRegistration._
 

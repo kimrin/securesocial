@@ -18,10 +18,13 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
+import akka.stream.Materializer
 import play.api.{ Application, Configuration, Environment }
 import play.api.data.Form
 import play.api.data.Forms._
+import play.api.http.{ FileMimeTypes, HttpErrorHandler, ParserConfiguration }
 import play.api.i18n.{ DefaultLangs, Lang, Langs, MessagesApi }
+import play.api.libs.Files.TemporaryFileCreator
 import play.api.mvc.{ AnyContent, BodyParser, ControllerComponents, Result }
 import play.filters.csrf.{ CSRFCheck, _ }
 import securesocial.core.SecureSocial._
@@ -36,13 +39,18 @@ import scala.concurrent.{ Await, Future }
  * @param env An environment
  */
 class PasswordChange @Inject() (implicit val env: RuntimeEnvironment,
-  val configuration: Configuration,
-  val playEnv: Environment,
-  val CSRFAddToken: CSRFAddToken,
-  val CSRFCheck: CSRFCheck,
-  implicit val controllerComponents: ControllerComponents,
-  implicit val parser: BodyParser[AnyContent])
-    extends SecureSocial {
+    val configuration: Configuration,
+    val playEnv: Environment,
+    val CSRFAddToken: CSRFAddToken,
+    val CSRFCheck: CSRFCheck,
+    implicit val controllerComponents: ControllerComponents,
+    implicit val parser: BodyParser[AnyContent],
+    implicit val messagesApi: MessagesApi,
+    implicit val fileMimeTypes: FileMimeTypes,
+    implicit val config: ParserConfiguration,
+    implicit val errorHandler: HttpErrorHandler,
+    implicit val materializer: Materializer,
+    implicit val temporaryFileCreator: TemporaryFileCreator) extends SecureSocial {
 
   val CurrentPassword = "currentPassword"
   val InvalidPasswordMessage = "securesocial.passwordChange.invalidPassword"

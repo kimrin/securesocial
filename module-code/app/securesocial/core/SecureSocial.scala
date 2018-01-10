@@ -18,9 +18,11 @@ package securesocial.core
 
 import javax.inject.Inject
 
-import play.api.{ Environment, Configuration, Application }
-import play.api.http.HeaderNames
-import play.api.i18n.{ Messages, I18nSupport, MessagesApi }
+import akka.stream.Materializer
+import play.api.{ Application, Configuration, Environment }
+import play.api.http.{ HeaderNames, HttpErrorHandler, ParserConfiguration }
+import play.api.i18n.{ I18nSupport, Messages, MessagesApi }
+import play.api.libs.Files.TemporaryFileCreator
 import play.api.libs.json.Json
 import play.api.mvc.{ Result, _ }
 import play.twirl.api.Html
@@ -35,7 +37,7 @@ import scala.concurrent.{ ExecutionContext, Future }
  * if available.
  *
  */
-trait SecureSocial extends BaseController with I18nSupport {
+trait SecureSocial extends ControllerHelpers with I18nSupport with PlayBodyParsers {
   import SecureSocial._
 
   implicit val configuration: Configuration
@@ -51,6 +53,8 @@ trait SecureSocial extends BaseController with I18nSupport {
   protected val notAuthorizedJson = Forbidden(Json.toJson(Map("error" -> "Not authorized"))).as(JSON)
 
   implicit val parser: BodyParser[AnyContent]
+
+  implicit val messagesApi: MessagesApi
 
   protected def notAuthorizedPage()(implicit request: RequestHeader): Html = {
     implicit val lang = request.lang

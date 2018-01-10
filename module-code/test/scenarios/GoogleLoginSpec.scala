@@ -1,28 +1,29 @@
 package scenarios
 
-import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
-import play.api.test.{ FakeApplication, PlaySpecification, WithApplication }
-
-import scenarios.helpers.{ TestGlobal, DemoUser, TestUserService }
+import play.api.test.{PlaySpecification, WithApplication}
+import play.api.inject.guice.{GuiceApplicationBuilder}
+import scenarios.helpers.{DemoUser, TestGlobal, TestUserService}
 import securesocial.core.providers.GoogleProvider
-import securesocial.core.{ IdentityProvider, EventListener, RuntimeEnvironment }
-import securesocial.core.services.{ HttpService, UserService, RoutesService }
+import securesocial.core.{EventListener, IdentityProvider, RuntimeEnvironment}
+import securesocial.core.services.{HttpService, RoutesService, UserService}
 import org.specs2.matcher.Matcher
-import play.api.libs.ws.{ WSRequest, WSRequestHolder, WSResponse }
+import play.api.libs.ws.{WSRequest, WSResponse}
+
 import scala.concurrent.Future
 import play.api.libs.json.Json
-
 import scenarios.helpers.Api._
-import java.io.File
 
 class GoogleLoginSpec extends PlaySpecification with Mockito {
 
-  /*def hasCode:Matcher[Map[String,Seq[String]]]=(map:Map[String,Seq[String]])=>map must contain("code" -> Seq("code"))
+  def hasCode:Matcher[Map[String,Seq[String]]]=(map:Map[String,Seq[String]])=>map must contain("code" -> Seq("code"))
   "an application using secure social" should {
-    val testGlobal=new TestGlobal(new TestEnvironment(_httpService = mock[HttpService]))
-    val application: FakeApplication = FakeApplication(withGlobal = Some(testGlobal), additionalConfiguration = googleConfig )
-    "log a valid google user" in new WithApplication(application){
+    val testGlobal = new TestEnvironment(_httpService = mock[HttpService])
+    val _httpService: HttpService = mock[HttpService].as("_httpService")
+    val application = new GuiceApplicationBuilder()
+      .configure(conf=googleConfig)
+      .build()
+    "log a valid google user" in new WithApplication(app=application) {
       val _httpService: HttpService = mock[HttpService].as("_httpService")
       val userInfoHolder: WSRequest = mock[WSRequest].as("userInfoHolder")
       val userInfoResponse: WSResponse = mock[WSResponse].as("userInfoResponse")
@@ -46,10 +47,11 @@ class GoogleLoginSpec extends PlaySpecification with Mockito {
           |"email": "test@example.com"
           |}
         """.stripMargin)
+
       testGlobal.runtimeEnvironment=new TestEnvironment(_httpService = _httpService)
 
       val loginResponse = authenticate(GoogleProvider.Google)
-      status(loginResponse) === 303
+        status(loginResponse) === 303
       val location: Option[String] = redirectLocation(loginResponse)
       location must beSome(Some(startWith("authorizationUrl")))
       val state = "state=([^&]*)".r.findFirstMatchIn(location.get).get.group(1)
@@ -84,5 +86,4 @@ class GoogleLoginSpec extends PlaySpecification with Mockito {
     , "securesocial.google.accessTokenUrl"->"accessTokenUrl"
     , "securesocial.google.scope"->"scope"
   )
-*/
 }

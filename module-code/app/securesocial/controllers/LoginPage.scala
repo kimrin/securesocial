@@ -18,6 +18,10 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
+import akka.stream.Materializer
+import play.api.http.{ FileMimeTypes, HttpErrorHandler, ParserConfiguration }
+import play.api.i18n.MessagesApi
+import play.api.libs.Files.TemporaryFileCreator
 import play.api.mvc.{ AnyContent, BodyParser, ControllerComponents }
 import play.api.{ Configuration, Environment }
 import play.filters.csrf.CSRFAddToken
@@ -37,11 +41,20 @@ class LoginPage @Inject() (implicit val env: RuntimeEnvironment,
   val playEnv: Environment,
   implicit val CSRFAddToken: CSRFAddToken,
   implicit val controllerComponents: ControllerComponents,
-  implicit val parser: BodyParser[AnyContent])
+  implicit val parser: BodyParser[AnyContent],
+  implicit val messagesApi: MessagesApi,
+  implicit val fileMimeTypes: FileMimeTypes,
+  implicit val config: ParserConfiguration,
+  implicit val errorHandler: HttpErrorHandler,
+  implicit val materializer: Materializer,
+  implicit val temporaryFileCreator: TemporaryFileCreator) extends LoginPageTrait {}
+
+trait LoginPageTrait
     extends SecureSocial {
 
   private val logger = play.api.Logger("securesocial.controllers.LoginPage")
-
+  implicit val CSRFAddToken: CSRFAddToken
+  implicit val messagesApi: MessagesApi
   /**
    * The property that specifies the page the user is redirected to after logging out.
    */

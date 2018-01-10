@@ -18,8 +18,11 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
-import play.api.{ Environment, Configuration, Application }
-import play.api.i18n.Messages
+import akka.stream.Materializer
+import play.api.http.{ FileMimeTypes, HttpErrorHandler, ParserConfiguration }
+import play.api.{ Application, Configuration, Environment }
+import play.api.i18n.{ Messages, MessagesApi }
+import play.api.libs.Files.TemporaryFileCreator
 import play.api.mvc._
 import securesocial.core._
 import securesocial.core.authenticator.CookieAuthenticator
@@ -33,11 +36,16 @@ import scala.concurrent.Future
  * A default controller that uses the BasicProfile as the user type
  */
 class ProviderController @Inject() (implicit val env: RuntimeEnvironment,
-  val configuration: Configuration,
-  val playEnv: Environment,
-  implicit val controllerComponents: ControllerComponents,
-  implicit val parser: BodyParser[AnyContent])
-    extends SecureSocial {
+    val configuration: Configuration,
+    val playEnv: Environment,
+    implicit val controllerComponents: ControllerComponents,
+    implicit val messagesApi: MessagesApi,
+    implicit val parser: BodyParser[AnyContent],
+    implicit val fileMimeTypes: FileMimeTypes,
+    implicit val config: ParserConfiguration,
+    implicit val errorHandler: HttpErrorHandler,
+    implicit val materializer: Materializer,
+    implicit val temporaryFileCreator: TemporaryFileCreator) extends SecureSocial {
 
   import securesocial.controllers.ProviderControllerHelper.{ logger, toUrl }
 
