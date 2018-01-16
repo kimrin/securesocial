@@ -31,10 +31,10 @@ package securesocial.controllers {
 
   class AssetsModule extends Module {
     override def bindings(environment: Environment, configuration: Configuration) = Seq(
-      bind[Assets].toSelf,
-      bind[AssetsMetadata].toProvider[AssetsMetadataProvider],
+      bind[securesocial.controllers.AssetsMetadata].toProvider[securesocial.controllers.AssetsMetadataProvider],
       bind[AssetsFinder].toProvider[AssetsFinderProvider],
-      bind[AssetsConfiguration].toProvider[AssetsConfigurationProvider]
+      bind[AssetsConfiguration].toProvider[AssetsConfigurationProvider],
+      bind[Assets].toSelf
     )
   }
 
@@ -56,7 +56,7 @@ package securesocial.controllers {
                                            config: AssetsConfiguration,
                                            fileMimeTypes: FileMimeTypes,
                                            lifecycle: ApplicationLifecycle
-                                         )(implicit ec: ExecutionContext) extends Provider[DefaultAssetsMetadata] {
+                                         )(implicit ec: ExecutionContext) extends Provider[AssetsMetadata] {
     lazy val get = {
       import StaticAssetsMetadata.instance
       val assetsMetadata = new DefaultAssetsMetadata(env, config, fileMimeTypes)
@@ -691,7 +691,7 @@ package securesocial.controllers {
   @Singleton
   class Assets @Inject() (errorHandler: HttpErrorHandler, meta: AssetsMetadata)(implicit ec: ExecutionContext) extends AssetsBuilder(errorHandler, meta)
 
-  class AssetsBuilder(errorHandler: HttpErrorHandler, meta: AssetsMetadata)(implicit ec: ExecutionContext) extends ControllerHelpers {
+  class AssetsBuilder @Inject() (errorHandler: HttpErrorHandler, meta: AssetsMetadata)(implicit ec: ExecutionContext) extends ControllerHelpers {
 
     import meta._
     import Assets._

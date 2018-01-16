@@ -25,7 +25,7 @@ import play.api.data._
 import play.api.http.{ FileMimeTypes, HttpErrorHandler, ParserConfiguration }
 import play.api.i18n.{ Lang, LangImplicits, MessagesApi }
 import play.api.libs.Files.TemporaryFileCreator
-import play.api.mvc.{ Action, AnyContent, BodyParser, ControllerComponents }
+import play.api.mvc._
 import play.filters.csrf.{ CSRFCheck, _ }
 import securesocial.core._
 import securesocial.core.providers.UsernamePasswordProvider
@@ -45,7 +45,7 @@ class Registration @Inject() (implicit val env: RuntimeEnvironment,
     val CSRFAddToken: CSRFAddToken,
     val CSRFCheck: CSRFCheck,
     implicit val controllerComponents: ControllerComponents,
-    implicit val parser: BodyParser[AnyContent],
+    implicit val parser: BodyParsers.Default,
     implicit val messagesApi: MessagesApi,
     implicit val fileMimeTypes: FileMimeTypes,
     implicit val config: ParserConfiguration,

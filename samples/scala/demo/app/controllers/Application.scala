@@ -19,6 +19,7 @@ package controllers
 import javax.inject.Inject
 
 import akka.stream.Materializer
+import com.google.inject.Module
 import play.api.http.{ FileMimeTypes, HttpErrorHandler, ParserConfiguration }
 import play.api.i18n.MessagesApi
 import play.api.libs.Files.TemporaryFileCreator
@@ -32,7 +33,7 @@ class Application @Inject() (implicit val env: RuntimeEnvironment,
   val playEnv: Environment,
   implicit val controllerComponents: ControllerComponents,
   implicit val action: DefaultActionBuilder,
-  implicit val parser: BodyParser[AnyContent],
+  implicit val parser: BodyParsers.Default,
   implicit val messagesApi: MessagesApi,
   implicit val fileMimeTypes: FileMimeTypes,
   implicit val config: ParserConfiguration,

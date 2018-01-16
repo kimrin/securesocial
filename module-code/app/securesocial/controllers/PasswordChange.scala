@@ -25,7 +25,7 @@ import play.api.data.Forms._
 import play.api.http.{ FileMimeTypes, HttpErrorHandler, ParserConfiguration }
 import play.api.i18n.{ DefaultLangs, Lang, Langs, MessagesApi }
 import play.api.libs.Files.TemporaryFileCreator
-import play.api.mvc.{ AnyContent, BodyParser, ControllerComponents, Result }
+import play.api.mvc._
 import play.filters.csrf.{ CSRFCheck, _ }
 import securesocial.core.SecureSocial._
 import securesocial.core._
@@ -44,7 +44,7 @@ class PasswordChange @Inject() (implicit val env: RuntimeEnvironment,
     val CSRFAddToken: CSRFAddToken,
     val CSRFCheck: CSRFCheck,
     implicit val controllerComponents: ControllerComponents,
-    implicit val parser: BodyParser[AnyContent],
+    implicit val parser: BodyParsers.Default,
     implicit val messagesApi: MessagesApi,
     implicit val fileMimeTypes: FileMimeTypes,
     implicit val config: ParserConfiguration,

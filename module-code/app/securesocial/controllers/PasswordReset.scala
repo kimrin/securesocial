@@ -25,7 +25,7 @@ import play.api.data.Forms._
 import play.api.http.{ FileMimeTypes, HttpErrorHandler, ParserConfiguration }
 import play.api.i18n.{ DefaultLangs, Lang, LangImplicits, MessagesApi }
 import play.api.libs.Files.TemporaryFileCreator
-import play.api.mvc.{ Action, AnyContent, BodyParser, ControllerComponents }
+import play.api.mvc._
 import play.filters.csrf.{ CSRFCheck, _ }
 import play.i18n.Langs
 import securesocial.core._
@@ -53,7 +53,7 @@ class PasswordReset @Inject() (implicit val lang: Lang,
     val CSRFCheck: CSRFCheck,
     implicit val controllerComponents: ControllerComponents,
     implicit val messagesApi: MessagesApi,
-    implicit val parser: BodyParser[AnyContent],
+    implicit val parser: BodyParsers.Default,
     implicit val fileMimeTypes: FileMimeTypes,
     implicit val config: ParserConfiguration,
     implicit val errorHandler: HttpErrorHandler,

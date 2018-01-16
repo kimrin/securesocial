@@ -22,7 +22,7 @@ import akka.stream.Materializer
 import play.api.http.{ FileMimeTypes, HttpErrorHandler, ParserConfiguration }
 import play.api.i18n.MessagesApi
 import play.api.libs.Files.TemporaryFileCreator
-import play.api.mvc.{ AnyContent, BodyParser, ControllerComponents }
+import play.api.mvc.{ AnyContent, BodyParser, BodyParsers, ControllerComponents }
 import play.api.{ Configuration, Environment }
 import play.filters.csrf.CSRFAddToken
 import securesocial.core._
@@ -41,7 +41,7 @@ class LoginPage @Inject() (implicit val env: RuntimeEnvironment,
   val playEnv: Environment,
   implicit val CSRFAddToken: CSRFAddToken,
   implicit val controllerComponents: ControllerComponents,
-  implicit val parser: BodyParser[AnyContent],
+  implicit val parser: BodyParsers.Default,
   implicit val messagesApi: MessagesApi,
   implicit val fileMimeTypes: FileMimeTypes,
   implicit val config: ParserConfiguration,

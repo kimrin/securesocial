@@ -43,7 +43,7 @@ class LoginApi @Inject() (implicit val env: RuntimeEnvironment, val configuratio
     action: DefaultActionBuilder,
     parsers: PlayBodyParsers,
     implicit val messagesApi: MessagesApi,
-    implicit val parser: BodyParser[AnyContent],
+    implicit val parser: BodyParsers.Default,
     implicit val fileMimeTypes: FileMimeTypes,
     implicit val config: ParserConfiguration,
     implicit val errorHandler: HttpErrorHandler,

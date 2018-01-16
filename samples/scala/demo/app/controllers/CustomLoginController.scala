@@ -19,7 +19,7 @@ class CustomLoginController @Inject() (override implicit val env: RuntimeEnviron
     override implicit val playEnv: Environment,
     override implicit val controllerComponents: ControllerComponents,
     override implicit val CSRFAddToken: CSRFAddToken,
-    override implicit val parser: BodyParser[AnyContent],
+    override implicit val parser: BodyParsers.Default,
     override implicit val messagesApi: MessagesApi,
     override implicit val fileMimeTypes: FileMimeTypes,
     override implicit val config: ParserConfiguration,

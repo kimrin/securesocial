@@ -22,7 +22,7 @@ import scala.runtime.AbstractPartialFunction
  */
 class TestBindingModule extends AbstractModule {
   override def configure(): Unit = {
-    //  bind(classOf[RuntimeEnvironment.Default[BasicProfile]]).to(classOf[TestGlobal])
+      bind(classOf[RuntimeEnvironment.Default[BasicProfile]]).to(classOf[TestGlobal])
   }
 
 }
