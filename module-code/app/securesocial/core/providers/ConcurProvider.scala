@@ -87,7 +87,7 @@ class ConcurProvider(routesService: RoutesService,
 
   override def fillProfile(info: OAuth2Info): Future[BasicProfile] = {
     val accessToken = info.accessToken
-    client.httpService.url(ConcurProvider.UserProfileApi).withHeaders(
+    client.httpService.url(ConcurProvider.UserProfileApi).addHttpHeaders(
       HeaderNames.AUTHORIZATION -> "OAuth %s".format(accessToken),
       HeaderNames.CONTENT_TYPE -> "application/xml"
     ).get().map { response =>

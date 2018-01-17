@@ -18,6 +18,7 @@ package securesocial.core.providers
 
 import play.api.{ Configuration, Environment }
 import play.api.libs.ws.WSAuthScheme
+import play.api.libs.ws.WSRequest
 import securesocial.core._
 import securesocial.core.services.{ CacheService, HttpService, RoutesService }
 
@@ -50,7 +51,7 @@ class ChatWorkProvider(routesService: RoutesService,
 
   override def fillProfile(info: OAuth2Info): Future[BasicProfile] = {
     val accessToken = info.accessToken
-    client.httpService.url(ChatWorkProvider.Api).withHeaders("Authorization" -> s"Bearer $accessToken").get().map { response =>
+    client.httpService.url(ChatWorkProvider.Api).addHttpHeaders("Authorization" -> s"Bearer $accessToken").get().map { response =>
       response.status match {
         case 200 =>
           val data = response.json

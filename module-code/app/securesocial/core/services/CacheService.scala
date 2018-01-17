@@ -18,8 +18,9 @@ package securesocial.core.services
 
 import javax.inject.Inject
 
+import akka.Done
 import play.api.Application
-import play.api.cache.CacheApi
+import play.api.cache.AsyncCacheApi
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ ExecutionContext, Future }
@@ -31,13 +32,13 @@ trait CacheService {
 
   import scala.reflect.ClassTag
 
-  def set[T](key: String, value: T, ttlInSeconds: Int = 0): Future[Unit]
+  def set[T](key: String, value: T, ttlInSeconds: Int = 0): Future[Done]
 
   def getAs[T](key: String)(implicit ct: ClassTag[T]): Future[Option[T]]
 
-  def remove(key: String): Future[Unit]
+  def remove(key: String): Future[Done]
 
-  implicit val cache: CacheApi
+  implicit val cache: AsyncCacheApi
 }
 
 object CacheService {
@@ -45,20 +46,17 @@ object CacheService {
   /**
    * A default implementation for the CacheService based on the Play cache.
    */
-  class Default(implicit val executionContext: ExecutionContext, implicit override val cache: CacheApi) extends CacheService {
+  class Default(implicit val executionContext: ExecutionContext, implicit override val cache: AsyncCacheApi) extends CacheService {
 
     import scala.reflect.ClassTag
 
-    override def set[T](key: String, value: T, ttlInSeconds: Int): Future[Unit] =
-      Future.successful(cache.set(key, value, Duration(ttlInSeconds, "s")))
+    override def set[T](key: String, value: T, ttlInSeconds: Int): Future[Done] =
+      cache.set(key, value, Duration(ttlInSeconds, "s"))
 
-    override def getAs[T](key: String)(implicit ct: ClassTag[T]): Future[Option[T]] = Future.successful {
-      cache.get[T](key)
-    }
+    override def getAs[T](key: String)(implicit ct: ClassTag[T]): Future[Option[T]] = cache.get[T](key)
 
-    override def remove(key: String): Future[Unit] = Future.successful {
-      cache.remove(key)
-    }
+    override def remove(key: String): Future[Done] = cache.remove(key)
+
   }
 
 }

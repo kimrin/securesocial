@@ -37,7 +37,7 @@ class BacklogOAuth2Client(
 
   def retrieveProfile(profileUrl: String, accessToken: String): Future[JsValue] = {
     httpService.url(profileUrl)
-      .withHeaders("Authorization" -> s"Bearer $accessToken")
+      .addHttpHeaders("Authorization" -> s"Bearer $accessToken")
       .get().map(_.json)
   }
 }

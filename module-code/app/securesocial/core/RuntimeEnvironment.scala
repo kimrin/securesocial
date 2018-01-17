@@ -1,11 +1,11 @@
 package securesocial.core
 
 import akka.actor.ActorSystem
-import play.api.i18n.{ MessagesApi, Messages }
+import play.api.i18n.{ Messages, MessagesApi }
 import play.api.libs.mailer.MailerClient
 import play.api.libs.ws.WSClient
 import play.api.{ Configuration, Environment }
-import play.api.cache.CacheApi
+import play.api.cache.{ AsyncCacheApi, CacheApi }
 import securesocial.controllers.{ MailTemplates, ViewTemplates }
 import securesocial.core.authenticator._
 import securesocial.core.providers._
@@ -13,7 +13,6 @@ import securesocial.core.providers.utils.{ Mailer, PasswordHasher, PasswordValid
 import securesocial.core.services._
 
 import scala.concurrent.ExecutionContext
-
 import play.api.libs.concurrent.{ Execution => PlayExecution }
 /**
  * A runtime environment where the services needed are available
@@ -23,7 +22,7 @@ trait RuntimeEnvironment {
   type U
 
   implicit val configuration: Configuration
-  implicit val cacheApi: CacheApi
+  implicit val cacheApi: AsyncCacheApi
   implicit val playEnv: Environment
   implicit val messagesApi: MessagesApi
   implicit val WS: WSClient

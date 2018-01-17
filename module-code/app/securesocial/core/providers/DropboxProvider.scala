@@ -43,7 +43,7 @@ class DropboxProvider(routesService: RoutesService,
   override def fillProfile(info: OAuth2Info): Future[BasicProfile] = {
 
     val accessToken = info.accessToken
-    WS.url(DropboxProvider.Api).withHeaders("Authorization" -> s"Bearer $accessToken").get().map { response =>
+    WS.url(DropboxProvider.Api).addHttpHeaders("Authorization" -> s"Bearer $accessToken").get().map { response =>
       response.status match {
         case 200 =>
           val data = response.json

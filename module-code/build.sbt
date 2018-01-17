@@ -21,7 +21,6 @@ libraryDependencies ++= Seq(
   filters,
   openId,
   ehcache,
-  cacheApi,
   specs2 % "test",
   "com.typesafe.play" %% "play-json" % "2.6.0",
   "com.typesafe.play" %% "play-mailer" % "5.0.0",

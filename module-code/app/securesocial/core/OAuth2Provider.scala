@@ -120,6 +120,7 @@ trait OAuth2Provider extends IdentityProvider with ApiSupport {
     val stateInQueryString: Option[String] = request.queryString.get(OAuth2Constants.State).flatMap(_.headOption)
     val cacheSessId: Option[Future[Option[String]]] = sessId.map(cacheService.getAs[String](_))
     cacheSessId.fold(Future.successful(false))(_.map(_ == stateInQueryString))
+    // Future.successful(true) // if this line exists, then auth. will success.
   }
 
   private[this] def authenticateCallback(request: Request[AnyContent], code: String): Future[AuthenticationResult] = {
