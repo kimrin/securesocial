@@ -24,18 +24,37 @@ import scala.concurrent.ExecutionContext.Implicits.global
 package securesocial.controllers {
 
 
+  import akka.stream.Materializer
   import akka.stream.scaladsl.StreamConverters
   import play.api
   import play.api.http._
+  import play.api.i18n.MessagesApi
   import play.api.inject.{ApplicationLifecycle, Module}
+  import play.api.libs.Files.TemporaryFileCreator
+  import play.api.ApplicationLoader
+  import play.api.Configuration
+  import play.api.inject._
+  import play.api.inject.guice._
 
+  /*
   class AssetsModule extends Module {
     override def bindings(environment: Environment, configuration: Configuration) = Seq(
-      bind[securesocial.controllers.AssetsMetadata].toProvider[securesocial.controllers.AssetsMetadataProvider],
+      bind[AssetsMetadata].toProvider[AssetsMetadataProvider],
       bind[AssetsFinder].toProvider[AssetsFinderProvider],
       bind[AssetsConfiguration].toProvider[AssetsConfigurationProvider],
       bind[Assets].toSelf
     )
+  }
+  */
+
+  class SecureSocialApplicationLoader extends GuiceApplicationLoader() {
+    override def builder(context: ApplicationLoader.Context): GuiceApplicationBuilder = {
+      val extra = Configuration("a" -> 1)
+      initialBuilder
+        .in(context.environment)
+        .loadConfig(extra ++ context.initialConfiguration)
+        .overrides(overrides(context): _*)
+    }
   }
 
   class AssetsFinderProvider @Inject() (assetsMetadata: AssetsMetadata) extends Provider[AssetsFinder] {
@@ -51,12 +70,11 @@ package securesocial.controllers {
     * `AssetsFinder.path` to get the final path of an asset according to the path and url prefix in configuration.
     */
   @Singleton
-  class AssetsMetadataProvider @Inject() (
-                                           env: Environment,
-                                           config: AssetsConfiguration,
-                                           fileMimeTypes: FileMimeTypes,
-                                           lifecycle: ApplicationLifecycle
-                                         )(implicit ec: ExecutionContext) extends Provider[AssetsMetadata] {
+  class AssetsMetadataProvider @Inject() (env: Environment,
+                                          config: AssetsConfiguration,
+                                          fileMimeTypes: FileMimeTypes,
+                                          lifecycle: ApplicationLifecycle
+                                         )(implicit ec: ExecutionContext, implicit val configuration: Configuration) extends Provider[AssetsMetadata] {
     lazy val get = {
       import StaticAssetsMetadata.instance
       val assetsMetadata = new DefaultAssetsMetadata(env, config, fileMimeTypes)
@@ -79,7 +97,7 @@ package securesocial.controllers {
 
   trait AssetsComponents {
     import scala.concurrent.ExecutionContext.Implicits.global
-    def configuration: Configuration
+    implicit def configuration: Configuration
     def environment: Environment
     def httpErrorHandler: HttpErrorHandler
     def fileMimeTypes: FileMimeTypes
@@ -285,7 +303,7 @@ package securesocial.controllers {
     private[this] lazy val defaultAssetsMetadata: AssetsMetadata = {
       import scala.concurrent.ExecutionContext.Implicits.global
       val environment = Environment.simple()
-      val configuration = Configuration.reference
+      implicit val configuration = Configuration.reference
       val assetsConfig = AssetsConfiguration.fromConfiguration(configuration, environment.mode)
       val httpConfig = HttpConfiguration.fromConfiguration(configuration, environment)
       val fileMimeTypes = new DefaultFileMimeTypes(httpConfig.fileMimeTypes)
@@ -311,8 +329,7 @@ package securesocial.controllers {
   trait AssetsMetadata {
     def finder: AssetsFinder
     private[controllers] def digest(path: String): Option[String]
-    private[controllers] def assetInfoForRequest(
-                                                  request: RequestHeader, name: String): Future[Option[(AssetInfo, AcceptEncoding)]]
+    private[controllers] def assetInfoForRequest(request: RequestHeader, name: String): Future[Option[(AssetInfo, AcceptEncoding)]]
   }
 
   /**
@@ -386,13 +403,14 @@ package securesocial.controllers {
     * [[AssetsMetadataProvider]] to set up needed statics.
     */
   @Singleton
-  class DefaultAssetsMetadata(
-                               config: AssetsConfiguration,
+  class DefaultAssetsMetadata @Inject () (config: AssetsConfiguration,
                                resource: String => Option[URL],
                                fileMimeTypes: FileMimeTypes
-                             )(implicit ec: ExecutionContext) extends AssetsMetadata {
+                             )(implicit ec: ExecutionContext, val configuration: Configuration)
+    extends AssetsMetadata {
     @Inject
-    def this(env: Environment, config: AssetsConfiguration, fileMimeTypes: FileMimeTypes)(implicit ec: ExecutionContext) = this(config, env.resource _, fileMimeTypes)
+    def this(env: Environment, config: AssetsConfiguration, fileMimeTypes: FileMimeTypes)
+            (implicit ec: ExecutionContext, configuration: Configuration) = this(config, env.resource _, fileMimeTypes)
 
     lazy val finder: AssetsFinder = new AssetsFinder {
       val assetsBasePath = config.path
