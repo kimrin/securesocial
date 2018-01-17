@@ -23,11 +23,10 @@ import play.api.{ Configuration, Environment }
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.http.{ FileMimeTypes, HttpErrorHandler, ParserConfiguration }
-import play.api.i18n.{ DefaultLangs, Lang, LangImplicits, MessagesApi }
+import play.api.i18n.{ Lang, Langs, LangImplicits, MessagesApi }
 import play.api.libs.Files.TemporaryFileCreator
 import play.api.mvc._
 import play.filters.csrf.{ CSRFCheck, _ }
-import play.i18n.Langs
 import securesocial.core._
 import securesocial.core.providers.UsernamePasswordProvider
 import securesocial.core.providers.utils.PasswordValidator
@@ -45,7 +44,7 @@ import scala.concurrent.Future
  * The trait that provides the Password Reset functionality
  *
  */
-class PasswordReset @Inject() (implicit val lang: Lang,
+class PasswordReset @Inject() (implicit val langs: Langs,
     implicit val env: RuntimeEnvironment,
     val configuration: Configuration,
     val playEnv: Environment,
@@ -61,6 +60,7 @@ class PasswordReset @Inject() (implicit val lang: Lang,
     implicit val temporaryFileCreator: TemporaryFileCreator) extends MailTokenBasedOperations with LangImplicits {
 
   private val logger = play.api.Logger("securesocial.controllers.BasePasswordReset")
+  implicit val lang = langs.availables.head
   val PasswordUpdated = "securesocial.password.passwordUpdated"
   val ErrorUpdatingPassword = "securesocial.password.error"
   val changePasswordForm = Form(
