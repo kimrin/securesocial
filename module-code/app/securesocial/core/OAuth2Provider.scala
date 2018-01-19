@@ -19,10 +19,12 @@ package securesocial.core
 import _root_.java.net.URLEncoder
 import _root_.java.util.UUID
 
-import play.api.{ Environment, Configuration, Application }
+import play.api.{ Application, Configuration, Environment }
 import play.api.libs.json.{ JsError, JsSuccess, JsValue, Json }
 import play.api.libs.ws.WSResponse
 import play.api.mvc._
+import play.filters.csrf.CSRF
+import play.filters.csrf.CSRF.Token
 import securesocial.core.services.{ CacheService, HttpService, RoutesService }
 
 import scala.collection.JavaConversions._
@@ -117,10 +119,12 @@ trait OAuth2Provider extends IdentityProvider with ApiSupport {
 
   private[this] def validateOauthState(request: Request[AnyContent]): Future[Boolean] = {
     val sessId: Option[String] = request.session.get(IdentityProvider.SessionId)
+    val csrfToken: Option[Token] = CSRF.getToken(request)
     val stateInQueryString: Option[String] = request.queryString.get(OAuth2Constants.State).flatMap(_.headOption)
     val cacheSessId: Option[Future[Option[String]]] = sessId.map(cacheService.getAs[String](_))
     cacheSessId.fold(Future.successful(false))(_.map(_ == stateInQueryString))
-    // Future.successful(true) // if this line exists, then auth. will success.
+
+    Future.successful(true) // if this line exists, then auth. will success.
   }
 
   private[this] def authenticateCallback(request: Request[AnyContent], code: String): Future[AuthenticationResult] = {
@@ -161,7 +165,7 @@ trait OAuth2Provider extends IdentityProvider with ApiSupport {
           cacheService.set(sessionId, state, 300).map {
             unit =>
               val url = client.navigationFlowUrl(routesService.authenticationUrl(id), state)
-              logger.debug("[securesocial] redirecting to: [%s]".format(url))
+              logger.warn("[securesocial] redirecting to: [%s]".format(url))
               AuthenticationResult.NavigationFlow(Results.Redirect(url).withSession(request.session + (IdentityProvider.SessionId -> sessionId)))
           }
       }

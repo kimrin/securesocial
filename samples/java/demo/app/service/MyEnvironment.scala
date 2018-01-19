@@ -16,8 +16,9 @@
  */
 package service
 
+import javax.inject.Inject
+
 import akka.actor.ActorSystem
-import com.google.inject.Inject
 import play.api.{ Configuration, Environment }
 import play.api.cache.{ AsyncCacheApi, CacheApi }
 import play.api.i18n.MessagesApi
@@ -28,7 +29,7 @@ import securesocial.core.authenticator.{ CookieAuthenticatorConfigurations, Http
 import securesocial.core.providers.UsernamePasswordProviderConfigurations
 import securesocial.core.services.UserService
 
-class MyEnvironment @Inject() ()(implicit val configuration: Configuration, implicit val playEnv: Environment, val cacheApi: AsyncCacheApi, val messagesApi: MessagesApi, val WS: WSClient, val mailerClient: MailerClient, val actorSystem: ActorSystem) extends RuntimeEnvironment.Default {
+class MyEnvironment @Inject() (implicit val configuration: Configuration, implicit val playEnv: Environment, val cacheApi: AsyncCacheApi, val messagesApi: MessagesApi, val WS: WSClient, val mailerClient: MailerClient, val actorSystem: ActorSystem) extends RuntimeEnvironment.Default {
   type U = DemoUser
   override val userService: UserService[U] = new InMemoryUserService()
 

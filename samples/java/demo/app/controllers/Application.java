@@ -16,7 +16,6 @@
  */
 package controllers;
 
-import com.google.inject.Inject;
 import play.Logger;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -29,6 +28,7 @@ import service.DemoUser;
 import views.html.index;
 import views.html.linkResult;
 
+import javax.inject.Inject;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 

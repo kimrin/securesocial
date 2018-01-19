@@ -23,8 +23,9 @@ import play.api.libs.oauth._
 import play.api.mvc.{ AnyContent, Request }
 import play.api.mvc.Results.Redirect
 import play.shaded.oauth.oauth.signpost.exception.OAuthException
+
 import scala.concurrent.{ ExecutionContext, Future }
-import securesocial.core.services.{ HttpService, RoutesService, CacheService }
+import securesocial.core.services.{ CacheService, HttpService, RoutesService }
 import play.api.libs.oauth.OAuth
 import play.api.libs.oauth.ServiceInfo
 import play.api.libs.oauth.RequestToken
@@ -102,12 +103,13 @@ abstract class OAuth1Provider(
       if (verifier.isEmpty) {
         // this is the 1st step in the auth flow. We need to get the request tokens
         val callbackUrl = routesService.authenticationUrl(id)
-        logger.debug("[securesocial] callback url = " + callbackUrl)
+        logger.warn("[securesocial] callback url = " + callbackUrl)
         client.retrieveRequestToken(callbackUrl).flatMap {
           case accessToken =>
             val cacheKey = UUID.randomUUID().toString
-            val redirect = Redirect(client.redirectUrl(accessToken.token)).withSession(request.session +
-              (OAuth1Provider.CacheKey -> cacheKey))
+            val newSessionToken = request.session + (OAuth1Provider.CacheKey -> cacheKey)
+            val redirect = Redirect(client.redirectUrl(accessToken.token))
+              .withSession(newSessionToken)
             // set the cache key timeoutfor 5 minutes, plenty of time to log in
             cacheService.set(cacheKey, accessToken, 300).map {
               u =>
@@ -120,12 +122,13 @@ abstract class OAuth1Provider(
         }
       } else {
         // 2nd step in the oauth flow
+        logger.warn("next session token = " + request.session.toString())
         val cacheKey = request.session.get(OAuth1Provider.CacheKey).getOrElse {
           logger.error("[securesocial] missing cache key in session during OAuth1 flow")
           throw new AuthenticationException()
         }
         for (
-          requestToken <- cacheService.getAs[RequestToken](cacheKey).recover {
+          requestToken <- cacheService.getAs[RequestToken]("").recover {
             case e =>
               logger.error("[securesocial] error retrieving entry from cache", e)
               throw new AuthenticationException()
@@ -155,6 +158,7 @@ object OAuth1Provider {
   val AuthorizationUrl = "authorizationUrl"
   val ConsumerKey = "consumerKey"
   val ConsumerSecret = "consumerSecret"
+  val CSRFToken = "csrfToken"
 }
 
 trait ServiceInfoHelper {
