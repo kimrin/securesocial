@@ -20,7 +20,7 @@ import _root_.java.util.UUID
 
 import play.api.{ Configuration, Environment }
 import play.api.libs.oauth._
-import play.api.mvc.{ AnyContent, Request }
+import play.api.mvc.{ AnyContent, Cookie, Request }
 import play.api.mvc.Results.Redirect
 import play.shaded.oauth.oauth.signpost.exception.OAuthException
 
@@ -31,6 +31,8 @@ import play.api.libs.oauth.ServiceInfo
 import play.api.libs.oauth.RequestToken
 import play.api.libs.oauth.ConsumerKey
 import play.api.libs.json.JsValue
+import play.api.libs.typedmap.TypedKey
+import play.filters.csrf.CSRF
 
 /**
  * A trait that allows mocking the OAuth 1 client
@@ -107,9 +109,9 @@ abstract class OAuth1Provider(
         client.retrieveRequestToken(callbackUrl).flatMap {
           case accessToken =>
             val cacheKey = UUID.randomUUID().toString
-            val newSessionToken = request.session + (OAuth1Provider.CacheKey -> cacheKey)
             val redirect = Redirect(client.redirectUrl(accessToken.token))
-              .withSession(newSessionToken)
+              .withCookies(Cookie(OAuth1Provider.CacheKey, cacheKey))
+              .bakeCookies()
             // set the cache key timeoutfor 5 minutes, plenty of time to log in
             cacheService.set(cacheKey, accessToken, 300).map {
               u =>
@@ -122,13 +124,9 @@ abstract class OAuth1Provider(
         }
       } else {
         // 2nd step in the oauth flow
-        logger.warn("next session token = " + request.session.toString())
-        val cacheKey = request.session.get(OAuth1Provider.CacheKey).getOrElse {
-          logger.error("[securesocial] missing cache key in session during OAuth1 flow")
-          throw new AuthenticationException()
-        }
+        val cacheKey = request.cookies.get(OAuth1Provider.CacheKey).get.value.toString()
         for (
-          requestToken <- cacheService.getAs[RequestToken]("").recover {
+          requestToken <- cacheService.getAs[RequestToken](cacheKey).recover {
             case e =>
               logger.error("[securesocial] error retrieving entry from cache", e)
               throw new AuthenticationException()

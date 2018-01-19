@@ -34,21 +34,9 @@ package securesocial.controllers {
   import play.api.ApplicationLoader
   import play.api.Configuration
   import play.api.inject._
-  import play.api.inject.guice._
 
-  /*
-  class AssetsModule extends Module {
-    override def bindings(environment: Environment, configuration: Configuration) = Seq(
-      bind[AssetsMetadata].toProvider[AssetsMetadataProvider],
-      bind[AssetsFinder].toProvider[AssetsFinderProvider],
-      bind[AssetsConfiguration].toProvider[AssetsConfigurationProvider],
-      bind[Assets].toSelf
-    )
-  }
-  */
-
-  class SecureSocialApplicationLoader extends GuiceApplicationLoader() {
-    override def builder(context: ApplicationLoader.Context): GuiceApplicationBuilder = {
+  class SecureSocialApplicationLoader extends play.api.inject.guice.GuiceApplicationLoader() {
+    override def builder(context: ApplicationLoader.Context): play.api.inject.guice.GuiceApplicationBuilder = {
       val extra = Configuration("a" -> 1)
       initialBuilder
         .in(context.environment)

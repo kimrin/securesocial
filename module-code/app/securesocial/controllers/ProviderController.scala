@@ -166,12 +166,13 @@ class ProviderController @Inject() (implicit val env: RuntimeEnvironment,
                 val sessionAfterEvents = Events.fire(evt).getOrElse(request.session)
                 builder().fromUser(userForAction).flatMap { authenticator =>
                   val url = toUrl(sessionAfterEvents)
-                  logger.debug(s"[securesocial] redirecting to $url")
                   Redirect(url).withSession(sessionAfterEvents -
                     SecureSocial.OriginalUrlKey -
                     SecureSocial.SaveModeKey -
                     IdentityProvider.SessionId -
-                    OAuth1Provider.CacheKey).startingAuthenticator(authenticator)
+                    OAuth1Provider.CacheKey
+                  ).startingAuthenticator(authenticator)
+
                 }
               }
             }
@@ -186,7 +187,8 @@ class ProviderController @Inject() (implicit val env: RuntimeEnvironment,
                     SecureSocial.OriginalUrlKey -
                     SecureSocial.SaveModeKey -
                     IdentityProvider.SessionId -
-                    OAuth1Provider.CacheKey).touchingAuthenticator(updatedAuthenticator)
+                    OAuth1Provider.CacheKey
+                  ).touchingAuthenticator(updatedAuthenticator)
                 ) yield {
                   logger.debug(s"[securesocial] linked $currentUser to: providerId = ${authenticated.profile.providerId}")
                   result

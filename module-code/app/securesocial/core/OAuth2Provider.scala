@@ -118,13 +118,10 @@ trait OAuth2Provider extends IdentityProvider with ApiSupport {
   }
 
   private[this] def validateOauthState(request: Request[AnyContent]): Future[Boolean] = {
-    val sessId: Option[String] = request.session.get(IdentityProvider.SessionId)
-    val csrfToken: Option[Token] = CSRF.getToken(request)
+    val sessId: Option[String] = Some(request.cookies.get(IdentityProvider.SessionId).get.value)
     val stateInQueryString: Option[String] = request.queryString.get(OAuth2Constants.State).flatMap(_.headOption)
     val cacheSessId: Option[Future[Option[String]]] = sessId.map(cacheService.getAs[String](_))
     cacheSessId.fold(Future.successful(false))(_.map(_ == stateInQueryString))
-
-    Future.successful(true) // if this line exists, then auth. will success.
   }
 
   private[this] def authenticateCallback(request: Request[AnyContent], code: String): Future[AuthenticationResult] = {
@@ -166,7 +163,9 @@ trait OAuth2Provider extends IdentityProvider with ApiSupport {
             unit =>
               val url = client.navigationFlowUrl(routesService.authenticationUrl(id), state)
               logger.warn("[securesocial] redirecting to: [%s]".format(url))
-              AuthenticationResult.NavigationFlow(Results.Redirect(url).withSession(request.session + (IdentityProvider.SessionId -> sessionId)))
+              AuthenticationResult.NavigationFlow(Results.Redirect(url)
+                .withSession(request.session + (IdentityProvider.SessionId -> sessionId))
+                .withCookies(Cookie(IdentityProvider.SessionId, sessionId)).bakeCookies())
           }
       }
     }

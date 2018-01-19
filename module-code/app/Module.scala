@@ -1,7 +1,7 @@
 import javax.inject.Singleton
 
-import com.google.inject.AbstractModule
 import securesocial.controllers._
+import com.google.inject._
 
 /**
  * This class is a Guice module that tells Guice how to bind several
@@ -12,7 +12,7 @@ import securesocial.controllers._
  * adding `play.modules.enabled` settings to the `application.conf`
  * configuration file.
  */
-class Module extends AbstractModule {
+class Module extends com.google.inject.AbstractModule {
 
   override def configure() = {
     bind(classOf[AssetsMetadata]).toProvider(classOf[AssetsMetadataProvider])

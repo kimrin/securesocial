@@ -7,6 +7,7 @@ scalaVersion := Common.scalaVersion
 scalariformSettings
 
 libraryDependencies ++= Seq(
+  guice,
   specs2 % "test",
   "tv.kazu" %% "securesocial" % version.value,
   "net.codingwell" %% "scala-guice" % "4.0.0",
