@@ -23,7 +23,7 @@ libraryDependencies ++= Seq(
   ehcache,
   specs2 % "test",
   "com.typesafe.play" %% "play-json" % "2.6.0",
-  "com.typesafe.play" %% "play-mailer" % "5.0.0",
+  "com.typesafe.play" %% "play-mailer" % "6.0.1",
   "org.mindrot" % "jbcrypt" % "0.3m"
 )
 

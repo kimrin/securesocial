@@ -118,7 +118,7 @@ trait OAuth2Provider extends IdentityProvider with ApiSupport {
   }
 
   private[this] def validateOauthState(request: Request[AnyContent]): Future[Boolean] = {
-    val sessId: Option[String] = Some(request.cookies.get(IdentityProvider.SessionId).get.value)
+    val sessId: Option[String] = request.cookies.get(IdentityProvider.SessionId).map(_.value)
     val stateInQueryString: Option[String] = request.queryString.get(OAuth2Constants.State).flatMap(_.headOption)
     val cacheSessId: Option[Future[Option[String]]] = sessId.map(cacheService.getAs[String](_))
     cacheSessId.fold(Future.successful(false))(_.map(_ == stateInQueryString))

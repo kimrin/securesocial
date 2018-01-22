@@ -11,21 +11,20 @@ import securesocial.controllers.LoginPage
 import play.api.mvc._
 import play.api.{ Configuration, Environment, Logger }
 import securesocial.core.{ IdentityProvider, RuntimeEnvironment }
-import service.DemoUser
 import securesocial.core.services.RoutesService
 
-class CustomLoginController @Inject() (override implicit val env: RuntimeEnvironment,
-    override implicit val configuration: Configuration,
-    override implicit val playEnv: Environment,
-    override implicit val controllerComponents: ControllerComponents,
-    override implicit val CSRFAddToken: CSRFAddToken,
-    override implicit val parser: BodyParsers.Default,
-    override implicit val messagesApi: MessagesApi,
-    override implicit val fileMimeTypes: FileMimeTypes,
-    override implicit val config: ParserConfiguration,
-    override implicit val errorHandler: HttpErrorHandler,
-    override implicit val materializer: Materializer,
-    override implicit val temporaryFileCreator: TemporaryFileCreator) extends LoginPage {
+class CustomLoginController @Inject() (implicit override val env: RuntimeEnvironment,
+    override val configuration: Configuration,
+    override val playEnv: Environment,
+    override val controllerComponents: ControllerComponents,
+    override val CSRFAddToken: CSRFAddToken,
+    override val parser: BodyParsers.Default,
+    override val messagesApi: MessagesApi,
+    override val fileMimeTypes: FileMimeTypes,
+    override val config: ParserConfiguration,
+    override val errorHandler: HttpErrorHandler,
+    override val materializer: Materializer,
+    override val temporaryFileCreator: TemporaryFileCreator) extends LoginPage {
   override def login: Action[AnyContent] = {
     Logger.debug("using CustomLoginController")
     super.login

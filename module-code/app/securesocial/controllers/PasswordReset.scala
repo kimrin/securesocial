@@ -50,14 +50,14 @@ class PasswordReset @Inject() (implicit val langs: Langs,
     val playEnv: Environment,
     val CSRFAddToken: CSRFAddToken,
     val CSRFCheck: CSRFCheck,
-    implicit val controllerComponents: ControllerComponents,
-    implicit val messagesApi: MessagesApi,
-    implicit val parser: BodyParsers.Default,
-    implicit val fileMimeTypes: FileMimeTypes,
-    implicit val config: ParserConfiguration,
-    implicit val errorHandler: HttpErrorHandler,
-    implicit val materializer: Materializer,
-    implicit val temporaryFileCreator: TemporaryFileCreator) extends MailTokenBasedOperations with LangImplicits {
+    val controllerComponents: ControllerComponents,
+    val messagesApi: MessagesApi,
+    val parser: BodyParsers.Default,
+    val fileMimeTypes: FileMimeTypes,
+    val config: ParserConfiguration,
+    val errorHandler: HttpErrorHandler,
+    val materializer: Materializer,
+    val temporaryFileCreator: TemporaryFileCreator) extends MailTokenBasedOperations with LangImplicits {
 
   private val logger = play.api.Logger("securesocial.controllers.BasePasswordReset")
   implicit val lang = langs.availables.head

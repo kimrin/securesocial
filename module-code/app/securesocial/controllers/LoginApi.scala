@@ -42,13 +42,13 @@ class LoginApi @Inject() (implicit val env: RuntimeEnvironment, val configuratio
     langs: Langs,
     action: DefaultActionBuilder,
     parsers: PlayBodyParsers,
-    implicit val messagesApi: MessagesApi,
-    implicit val parser: BodyParsers.Default,
-    implicit val fileMimeTypes: FileMimeTypes,
-    implicit val config: ParserConfiguration,
-    implicit val errorHandler: HttpErrorHandler,
-    implicit val materializer: Materializer,
-    implicit val temporaryFileCreator: TemporaryFileCreator) extends SecureSocial {
+    val messagesApi: MessagesApi,
+    val parser: BodyParsers.Default,
+    val fileMimeTypes: FileMimeTypes,
+    val config: ParserConfiguration,
+    val errorHandler: HttpErrorHandler,
+    val materializer: Materializer,
+    val temporaryFileCreator: TemporaryFileCreator) extends SecureSocial {
 
   val controllerComponents: ControllerComponents = DefaultControllerComponents(
     action, parsers, messagesApi, langs, fileMimeTypes, executionContext

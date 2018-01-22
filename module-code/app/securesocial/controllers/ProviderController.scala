@@ -38,14 +38,14 @@ import scala.concurrent.Future
 class ProviderController @Inject() (implicit val env: RuntimeEnvironment,
     val configuration: Configuration,
     val playEnv: Environment,
-    implicit val controllerComponents: ControllerComponents,
-    implicit val messagesApi: MessagesApi,
-    implicit val parser: BodyParsers.Default,
-    implicit val fileMimeTypes: FileMimeTypes,
-    implicit val config: ParserConfiguration,
-    implicit val errorHandler: HttpErrorHandler,
-    implicit val materializer: Materializer,
-    implicit val temporaryFileCreator: TemporaryFileCreator) extends SecureSocial {
+    val controllerComponents: ControllerComponents,
+    val messagesApi: MessagesApi,
+    val parser: BodyParsers.Default,
+    val fileMimeTypes: FileMimeTypes,
+    val config: ParserConfiguration,
+    val errorHandler: HttpErrorHandler,
+    val materializer: Materializer,
+    val temporaryFileCreator: TemporaryFileCreator) extends SecureSocial {
 
   import securesocial.controllers.ProviderControllerHelper.{ logger, toUrl }
 

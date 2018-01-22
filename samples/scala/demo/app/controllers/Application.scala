@@ -31,15 +31,15 @@ import play.api.mvc._
 class Application @Inject() (implicit val env: RuntimeEnvironment,
   val configuration: Configuration,
   val playEnv: Environment,
-  implicit val controllerComponents: ControllerComponents,
-  implicit val action: DefaultActionBuilder,
-  implicit val parser: BodyParsers.Default,
-  implicit val messagesApi: MessagesApi,
-  implicit val fileMimeTypes: FileMimeTypes,
-  implicit val config: ParserConfiguration,
-  implicit val errorHandler: HttpErrorHandler,
-  implicit val materializer: Materializer,
-  implicit val temporaryFileCreator: TemporaryFileCreator)
+  val controllerComponents: ControllerComponents,
+  val action: DefaultActionBuilder,
+  val parser: BodyParsers.Default,
+  val messagesApi: MessagesApi,
+  val fileMimeTypes: FileMimeTypes,
+  val config: ParserConfiguration,
+  val errorHandler: HttpErrorHandler,
+  val materializer: Materializer,
+  val temporaryFileCreator: TemporaryFileCreator)
     extends securesocial.core.SecureSocial {
   def index = SecuredAction { implicit request =>
     Ok(views.html.index(request.user.asInstanceOf[DemoUser].main))

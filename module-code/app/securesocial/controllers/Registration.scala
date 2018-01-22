@@ -44,14 +44,14 @@ class Registration @Inject() (implicit val env: RuntimeEnvironment,
     val playEnv: Environment,
     val CSRFAddToken: CSRFAddToken,
     val CSRFCheck: CSRFCheck,
-    implicit val controllerComponents: ControllerComponents,
-    implicit val parser: BodyParsers.Default,
-    implicit val messagesApi: MessagesApi,
-    implicit val fileMimeTypes: FileMimeTypes,
-    implicit val config: ParserConfiguration,
-    implicit val errorHandler: HttpErrorHandler,
-    implicit val materializer: Materializer,
-    implicit val temporaryFileCreator: TemporaryFileCreator) extends MailTokenBasedOperations with LangImplicits {
+    val controllerComponents: ControllerComponents,
+    val parser: BodyParsers.Default,
+    val messagesApi: MessagesApi,
+    val fileMimeTypes: FileMimeTypes,
+    val config: ParserConfiguration,
+    val errorHandler: HttpErrorHandler,
+    val materializer: Materializer,
+    val temporaryFileCreator: TemporaryFileCreator) extends MailTokenBasedOperations with LangImplicits {
 
   import securesocial.controllers.BaseRegistration._
 

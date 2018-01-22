@@ -30,9 +30,9 @@ import securesocial.core.authenticator.{ CookieAuthenticatorConfigurations, Http
 import securesocial.core.providers.UsernamePasswordProviderConfigurations
 import securesocial.core.{ BasicProfile, RuntimeEnvironment, ServiceInfoHelper }
 
-class MyEnvironment @Inject() (implicit val configuration: Configuration, implicit val playEnv: Environment, val cacheApi: AsyncCacheApi, val messagesApi: MessagesApi, val WS: WSClient, val mailerClient: MailerClient, val actorSystem: ActorSystem) extends RuntimeEnvironment.Default {
+class MyEnvironment @Inject() (implicit val configuration: Configuration, val playEnv: Environment, val cacheApi: AsyncCacheApi, val messagesApi: MessagesApi, val WS: WSClient, val mailerClient: play.api.libs.mailer.MailerClient, val actorSystem: ActorSystem) extends RuntimeEnvironment.Default {
   override type U = DemoUser
-  override implicit val executionContext = play.api.libs.concurrent.Execution.defaultContext
+  implicit override val executionContext = play.api.libs.concurrent.Execution.defaultContext
   override lazy val routes = new CustomRoutesService()
   override lazy val userService: InMemoryUserService = new InMemoryUserService()
   override lazy val eventListeners = List(new MyEventListener())
