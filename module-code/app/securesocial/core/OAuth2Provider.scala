@@ -164,7 +164,6 @@ trait OAuth2Provider extends IdentityProvider with ApiSupport {
               val url = client.navigationFlowUrl(routesService.authenticationUrl(id), state)
               logger.warn("[securesocial] redirecting to: [%s]".format(url))
               AuthenticationResult.NavigationFlow(Results.Redirect(url)
-                .withSession(request.session + (IdentityProvider.SessionId -> sessionId))
                 .withCookies(Cookie(IdentityProvider.SessionId, sessionId)).bakeCookies())
           }
       }

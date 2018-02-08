@@ -18,35 +18,21 @@ package controllers
 
 import javax.inject.Inject
 
-import akka.stream.Materializer
-import com.google.inject.Module
-import play.api.http.{ FileMimeTypes, HttpErrorHandler, ParserConfiguration }
-import play.api.i18n.MessagesApi
-import play.api.libs.Files.TemporaryFileCreator
 import securesocial.core._
-import service.{ DemoUser, MyEnvironment, MyEventListener }
-import play.api.{ Configuration, Environment }
+import service.{ DemoUser }
+import play.api.{ Configuration }
 import play.api.mvc._
 
 class Application @Inject() (implicit val env: RuntimeEnvironment,
   val configuration: Configuration,
-  val playEnv: Environment,
-  val controllerComponents: ControllerComponents,
-  val action: DefaultActionBuilder,
-  val parser: BodyParsers.Default,
-  val messagesApi: MessagesApi,
-  val fileMimeTypes: FileMimeTypes,
-  val config: ParserConfiguration,
-  val errorHandler: HttpErrorHandler,
-  val materializer: Materializer,
-  val temporaryFileCreator: TemporaryFileCreator)
+  override val controllerComponents: ControllerComponents)
     extends securesocial.core.SecureSocial {
   def index = SecuredAction { implicit request =>
     Ok(views.html.index(request.user.asInstanceOf[DemoUser].main))
   }
 
   // a sample action using an authorization implementation
-  def onlyTwitter = SecuredAction(WithProvider("twitter")) { implicit request =>
+  def onlyTwitter = SecuredAction(parser, WithProvider("twitter")) { implicit request =>
     Ok("You can see this because you logged in using Twitter")
   }
 

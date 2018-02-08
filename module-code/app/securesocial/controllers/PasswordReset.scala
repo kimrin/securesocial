@@ -18,13 +18,10 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
-import akka.stream.Materializer
 import play.api.{ Configuration, Environment }
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.http.{ FileMimeTypes, HttpErrorHandler, ParserConfiguration }
-import play.api.i18n.{ Lang, Langs, LangImplicits, MessagesApi }
-import play.api.libs.Files.TemporaryFileCreator
+import play.api.i18n.{ Langs, LangImplicits }
 import play.api.mvc._
 import play.filters.csrf.{ CSRFCheck, _ }
 import securesocial.core._
@@ -47,20 +44,12 @@ import scala.concurrent.Future
 class PasswordReset @Inject() (implicit val langs: Langs,
     implicit val env: RuntimeEnvironment,
     val configuration: Configuration,
-    val playEnv: Environment,
+    override val playEnv: Environment,
+    override val controllerComponents: ControllerComponents,
     val CSRFAddToken: CSRFAddToken,
-    val CSRFCheck: CSRFCheck,
-    val controllerComponents: ControllerComponents,
-    val messagesApi: MessagesApi,
-    val parser: BodyParsers.Default,
-    val fileMimeTypes: FileMimeTypes,
-    val config: ParserConfiguration,
-    val errorHandler: HttpErrorHandler,
-    val materializer: Materializer,
-    val temporaryFileCreator: TemporaryFileCreator) extends MailTokenBasedOperations with LangImplicits {
+    val CSRFCheck: CSRFCheck) extends MailTokenBasedOperations with LangImplicits {
 
   private val logger = play.api.Logger("securesocial.controllers.BasePasswordReset")
-  implicit val lang = langs.availables.head
   val PasswordUpdated = "securesocial.password.passwordUpdated"
   val ErrorUpdatingPassword = "securesocial.password.error"
   val changePasswordForm = Form(
@@ -77,7 +66,7 @@ class PasswordReset @Inject() (implicit val langs: Langs,
   def startResetPassword = CSRFAddToken {
     Action {
       implicit request =>
-        Ok(env.viewTemplates.getStartResetPasswordPage(startForm))
+        Ok(env.viewTemplates.getStartResetPasswordPage(startForm)(request, lang))
     }
   }
 
@@ -88,7 +77,7 @@ class PasswordReset @Inject() (implicit val langs: Langs,
     Action.async {
       implicit request =>
         startForm.bindFromRequest.fold(
-          errors => Future.successful(BadRequest(env.viewTemplates.getStartResetPasswordPage(errors))),
+          errors => Future.successful(BadRequest(env.viewTemplates.getStartResetPasswordPage(errors)(request, lang))),
           e => {
             val email = e.toLowerCase
             env.userService.findByEmailAndProvider(email, UsernamePasswordProvider.UsernamePassword).map {
@@ -96,11 +85,11 @@ class PasswordReset @Inject() (implicit val langs: Langs,
                 maybeUser match {
                   case Some(user) =>
                     createToken(email, isSignUp = false).map { token =>
-                      env.mailer.sendPasswordResetEmail(user, token.uuid)
+                      env.mailer.sendPasswordResetEmail(user, token.uuid)(request, lang)
                       env.userService.saveToken(token)
                     }
                   case None =>
-                    env.mailer.sendUnkownEmailNotice(email)
+                    env.mailer.sendUnkownEmailNotice(email)(request, lang)
                 }
                 handleStartResult().flashing(Success -> messagesApi(BaseRegistration.ThankYouCheckEmail)(lang))
             }
@@ -119,7 +108,7 @@ class PasswordReset @Inject() (implicit val langs: Langs,
       implicit request =>
         executeForToken(token, false, {
           t =>
-            Future.successful(Ok(env.viewTemplates.getResetPasswordPage(changePasswordForm, token)))
+            Future.successful(Ok(env.viewTemplates.getResetPasswordPage(changePasswordForm, token)(request, lang)))
         })
     }
   }
@@ -135,7 +124,7 @@ class PasswordReset @Inject() (implicit val langs: Langs,
       executeForToken(token, false, {
         t =>
           changePasswordForm.bindFromRequest.fold(errors =>
-            Future.successful(BadRequest(env.viewTemplates.getResetPasswordPage(errors, token))),
+            Future.successful(BadRequest(env.viewTemplates.getResetPasswordPage(errors, token)(request, lang))),
             p =>
               env.userService.findByEmailAndProvider(t.email, UsernamePasswordProvider.UsernamePassword).flatMap {
                 case Some(profile) =>
@@ -144,7 +133,7 @@ class PasswordReset @Inject() (implicit val langs: Langs,
                     updated <- env.userService.save(profile.copy(passwordInfo = Some(hashed)), SaveMode.PasswordChange);
                     deleted <- env.userService.deleteToken(token)
                   ) yield {
-                    env.mailer.sendPasswordChangedNotice(profile)
+                    env.mailer.sendPasswordChangedNotice(profile)(request, lang)
                     val eventSession = Events.fire(new PasswordResetEvent(updated)).getOrElse(request.session)
                     confirmationResult().withSession(eventSession).flashing(Success -> messagesApi(PasswordUpdated)(lang))
                   }

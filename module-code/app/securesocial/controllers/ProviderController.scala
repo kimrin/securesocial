@@ -18,14 +18,10 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
-import akka.stream.Materializer
-import play.api.http.{ FileMimeTypes, HttpErrorHandler, ParserConfiguration }
-import play.api.{ Application, Configuration, Environment }
-import play.api.i18n.{ Messages, MessagesApi }
-import play.api.libs.Files.TemporaryFileCreator
+import play.api.{ Configuration, Environment }
+import play.api.i18n.{ Langs }
 import play.api.mvc._
 import securesocial.core._
-import securesocial.core.authenticator.CookieAuthenticator
 import securesocial.core.providers.UsernamePasswordProvider
 import securesocial.core.services.SaveMode
 import securesocial.core.utils._
@@ -37,15 +33,9 @@ import scala.concurrent.Future
  */
 class ProviderController @Inject() (implicit val env: RuntimeEnvironment,
     val configuration: Configuration,
-    val playEnv: Environment,
-    val controllerComponents: ControllerComponents,
-    val messagesApi: MessagesApi,
-    val parser: BodyParsers.Default,
-    val fileMimeTypes: FileMimeTypes,
-    val config: ParserConfiguration,
-    val errorHandler: HttpErrorHandler,
-    val materializer: Materializer,
-    val temporaryFileCreator: TemporaryFileCreator) extends SecureSocial {
+    override val playEnv: Environment,
+    override val controllerComponents: ControllerComponents,
+    val langs: Langs) extends SecureSocial {
 
   import securesocial.controllers.ProviderControllerHelper.{ logger, toUrl }
 
@@ -141,14 +131,13 @@ class ProviderController @Inject() (implicit val env: RuntimeEnvironment,
    * @param miscParam miscellaneous information necessary for providers
    */
   private def handleAuth(provider: String, redirectTo: Option[String], scope: Option[String], authorizationUrlParams: Map[String, String], saveModeStr: Option[String] = None, miscParam: Option[String] = None) = UserAwareAction.async { implicit request =>
-    val messages = messagesApi.preferred(request)
     val authenticationFlow = request.user.isEmpty
     val paramsForSession: Map[String, Option[String]] = Map(SecureSocial.OriginalUrlKey -> redirectTo, SecureSocial.SaveModeKey -> saveModeStr)
 
     getProvider(provider, scope, authorizationUrlParams, saveModeStr, miscParam).map {
       _.authenticate().flatMap {
         case denied: AuthenticationResult.AccessDenied =>
-          Future.successful(Redirect(env.routes.accessDeniedUrl).flashing("error" -> Messages("securesocial.login.accessDenied")))
+          Future.successful(Redirect(env.routes.accessDeniedUrl).flashing("error" -> messagesApi("securesocial.login.accessDenied")(lang)))
         case failed: AuthenticationResult.Failed =>
           logger.error(s"[securesocial] authentication failed, reason: ${failed.error}")
           throw new AuthenticationException()
@@ -158,9 +147,9 @@ class ProviderController @Inject() (implicit val env: RuntimeEnvironment,
         case authenticated: AuthenticationResult.Authenticated =>
           if (authenticationFlow) {
             val profile = authenticated.profile
-            env.userService.find(profile.providerId, profile.userId, messages).flatMap { maybeExisting =>
+            env.userService.find(profile.providerId, profile.userId).flatMap { maybeExisting =>
               val saveMode = getSaveMode(request.session.get(SecureSocial.SaveModeKey), maybeExisting.isDefined)
-              env.userService.save(authenticated.profile, saveMode, messages).flatMap { userForAction =>
+              env.userService.save(authenticated.profile, saveMode).flatMap { userForAction =>
                 logger.debug(s"[securesocial] user completed authentication: provider = ${profile.providerId}, userId: ${profile.userId}, mode = $saveMode, session = ${request.session.data}")
                 val evt = if (saveMode == SaveMode.LoggedIn) new LoginEvent(userForAction) else new SignUpEvent(userForAction)
                 val sessionAfterEvents = Events.fire(evt).getOrElse(request.session)
@@ -181,7 +170,7 @@ class ProviderController @Inject() (implicit val env: RuntimeEnvironment,
               case Some(currentUser) =>
                 val modifiedSession = overrideSession(request.session, paramsForSession)
                 for (
-                  linked <- env.userService.link(currentUser, authenticated.profile, messages);
+                  linked <- env.userService.link(currentUser, authenticated.profile);
                   updatedAuthenticator <- request.authenticator.get.updateUser(linked);
                   result <- Redirect(toUrl(modifiedSession)).withSession(modifiedSession -
                     SecureSocial.OriginalUrlKey -
@@ -200,12 +189,12 @@ class ProviderController @Inject() (implicit val env: RuntimeEnvironment,
       } recover {
         case e: RecoverableAuthenticationException =>
           logger.info("Unable to log user in. An exception was thrown")
-          val message = e.message.getOrElse(Messages("securesocial.login.errorLoggingIn"))
+          val message = e.message.getOrElse(messagesApi("securesocial.login.errorLoggingIn")(lang))
           val redirectUrl = e.redirectUrl.map(_.absoluteURL()).getOrElse(env.routes.loginPageUrl)
           Redirect(redirectUrl).flashing("error" -> message)
         case e =>
           logger.error("Unable to log user in. An exception was thrown", e)
-          Redirect(env.routes.loginPageUrl).flashing("error" -> Messages("securesocial.login.errorLoggingIn"))
+          Redirect(env.routes.loginPageUrl).flashing("error" -> messagesApi("securesocial.login.errorLoggingIn")(lang))
       }
     } getOrElse {
       Future.successful(NotFound)

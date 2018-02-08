@@ -19,14 +19,13 @@ package securesocial.core
 import javax.inject.Inject
 
 import akka.stream.Materializer
-import play.api.{ Application, Configuration, Environment }
-import play.api.http.{ HeaderNames, HttpErrorHandler, ParserConfiguration }
-import play.api.i18n.{ I18nSupport, Messages, MessagesApi }
+import play.api.{ Configuration, Environment }
+import play.api.http._
+import play.api.i18n._
 import play.api.libs.Files.TemporaryFileCreator
 import play.api.libs.json.Json
 import play.api.mvc.{ Result, _ }
 import play.twirl.api.Html
-import securesocial.core.SecureSocial.{ RequestWithUser, SecuredRequest }
 import securesocial.core.authenticator._
 import securesocial.core.utils._
 
@@ -37,39 +36,37 @@ import scala.concurrent.{ ExecutionContext, Future }
  * if available.
  *
  */
-trait SecureSocial extends ControllerHelpers with I18nSupport with PlayBodyParsers {
+trait SecureSocial extends BaseControllerHelpers with I18nSupport {
   import SecureSocial._
-
   implicit val configuration: Configuration
 
   implicit val env: RuntimeEnvironment
 
-  implicit val playEnv: Environment
-
+  implicit val playEnv: Environment = playEnv
+  implicit override val controllerComponents: ControllerComponents
+  implicit val parser: BodyParsers.Default = new BodyParsers.Default()
+  implicit override val fileMimeTypes: FileMimeTypes = fileMimeTypes
+  implicit val config: ParserConfiguration = config
+  implicit val errorHandler: HttpErrorHandler = errorHandler
+  implicit val materializer: Materializer = materializer
+  implicit val temporaryFileCreator: TemporaryFileCreator = temporaryFileCreator
   implicit def executionContext: ExecutionContext = env.executionContext
-
+  implicit val lang: Lang = Lang("en")
   protected val notAuthenticatedJson = Unauthorized(Json.toJson(Map("error" -> "Credentials required"))).as(JSON)
 
   protected val notAuthorizedJson = Forbidden(Json.toJson(Map("error" -> "Not authorized"))).as(JSON)
 
-  implicit val parser: BodyParser[AnyContent]
-
-  implicit val messagesApi: MessagesApi
-
-  protected def notAuthorizedPage()(implicit request: RequestHeader): Html = {
-    implicit val lang = request.lang
+  protected def notAuthorizedPage()(implicit request: RequestHeader, lang: Lang): Html = {
     env.viewTemplates.getNotAuthorizedPage
   }
 
-  //  @Inject
-  //  override implicit var messagesApi: MessagesApi = null
-
   protected def notAuthenticatedResult[A](implicit request: Request[A]): Future[Result] = {
+    val message = messagesApi("securesocial.loginRequired")(lang)
     Future.successful {
       render {
         case Accepts.Json() => notAuthenticatedJson
         case Accepts.Html() => Redirect(env.routes.loginPageUrl).
-          flashing("error" -> Messages("securesocial.loginRequired"))
+          flashing("error" -> message)
           .withSession(request.session + (SecureSocial.OriginalUrlKey -> request.uri))
         case _ => Unauthorized("Credentials required")
       }
@@ -80,7 +77,7 @@ trait SecureSocial extends ControllerHelpers with I18nSupport with PlayBodyParse
     Future.successful {
       render {
         case Accepts.Json() => notAuthorizedJson
-        case Accepts.Html() => Forbidden(notAuthorizedPage())
+        case Accepts.Html() => Forbidden(notAuthorizedPage()(request, lang))
         case _ => Forbidden("Not authorized")
       }
     }
@@ -90,18 +87,18 @@ trait SecureSocial extends ControllerHelpers with I18nSupport with PlayBodyParse
    * A secured action.  If there is no user in the session the request is redirected
    * to the login page
    */
-  object SecuredAction extends SecuredActionBuilder {
+  object SecuredAction extends SecuredActionBuilder()(parser) {
     /**
      * Creates a secured action
      */
-    def apply[A]() = new SecuredActionBuilder()
+    def apply[A](implicit parser: BodyParser[AnyContent]) = new SecuredActionBuilder()
 
     /**
      * Creates a secured action
      *
      * @param authorize an Authorize object that checks if the user is authorized to invoke the action
      */
-    def apply[A](authorize: Authorization[env.U]) = new SecuredActionBuilder()
+    def apply[A](implicit parser: BodyParser[AnyContent], authorize: Authorization[env.U]) = new SecuredActionBuilder()
   }
 
   /**
@@ -109,9 +106,8 @@ trait SecureSocial extends ControllerHelpers with I18nSupport with PlayBodyParse
    *
    * @param authorize an Authorize object that checks if the user is authorized to invoke the action
    */
-  class SecuredActionBuilder @Inject() (implicit val parser: BodyParser[AnyContent], implicit val authorize: Option[Authorization[env.U]] = None)
+  class SecuredActionBuilder @Inject() (implicit val parser: BodyParser[AnyContent], val authorize: Option[Authorization[env.U]] = None)
       extends ActionBuilder[({ type R[A] = SecuredRequest[A, env.U] })#R, AnyContent] {
-
     override protected implicit def executionContext: ExecutionContext = env.executionContext
 
     private val logger = play.api.Logger("securesocial.core.SecuredActionBuilder")
@@ -135,6 +131,7 @@ trait SecureSocial extends ControllerHelpers with I18nSupport with PlayBodyParse
           notAuthenticatedResult(request).flatMap { _.discardingAuthenticator(authenticator) }
         case None =>
           logger.debug("[securesocial] anonymous user trying to access : '%s'".format(request.uri))
+          logger.warn("[securesocial] anonymous user trying to access : '%s'".format(request.uri))
           notAuthenticatedResult(request)
       }
     }
@@ -148,8 +145,8 @@ trait SecureSocial extends ControllerHelpers with I18nSupport with PlayBodyParse
   /**
    * An action that adds the current user in the request if it's available.
    */
-  object UserAwareAction extends UserAwareActionBuilder {
-    def apply[A]() = new UserAwareActionBuilder()
+  object UserAwareAction extends UserAwareActionBuilder()(parser) {
+    def apply[A]()(implicit parser: BodyParser[AnyContent]) = new UserAwareActionBuilder()
   }
 
   /**

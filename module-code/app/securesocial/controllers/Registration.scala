@@ -18,14 +18,11 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
-import akka.stream.Materializer
 import play.api.{ Configuration, Environment }
 import play.api.data.Forms._
 import play.api.data._
-import play.api.http.{ FileMimeTypes, HttpErrorHandler, ParserConfiguration }
-import play.api.i18n.{ Lang, LangImplicits, MessagesApi }
-import play.api.libs.Files.TemporaryFileCreator
-import play.api.mvc._
+import play.api.i18n.{ LangImplicits, Langs }
+import play.api.mvc.{ Action, ControllerComponents, DefaultActionBuilder }
 import play.filters.csrf.{ CSRFCheck, _ }
 import securesocial.core._
 import securesocial.core.providers.UsernamePasswordProvider
@@ -41,20 +38,14 @@ import scala.concurrent.{ Await, Future }
  */
 class Registration @Inject() (implicit val env: RuntimeEnvironment,
     val configuration: Configuration,
-    val playEnv: Environment,
+    override val playEnv: Environment,
     val CSRFAddToken: CSRFAddToken,
     val CSRFCheck: CSRFCheck,
-    val controllerComponents: ControllerComponents,
-    val parser: BodyParsers.Default,
-    val messagesApi: MessagesApi,
-    val fileMimeTypes: FileMimeTypes,
-    val config: ParserConfiguration,
-    val errorHandler: HttpErrorHandler,
-    val materializer: Materializer,
-    val temporaryFileCreator: TemporaryFileCreator) extends MailTokenBasedOperations with LangImplicits {
+    val langs: Langs,
+    override val controllerComponents: ControllerComponents,
+    val builder: DefaultActionBuilder) extends MailTokenBasedOperations with LangImplicits {
 
   import securesocial.controllers.BaseRegistration._
-
   private val logger = play.api.Logger("securesocial.controllers.Registration")
 
   val providerId = UsernamePasswordProvider.UsernamePassword
@@ -62,7 +53,6 @@ class Registration @Inject() (implicit val env: RuntimeEnvironment,
   val UserName = "userName"
   val FirstName = "firstName"
   val LastName = "lastName"
-  implicit val lang = Lang("en")
 
   val formWithUsername = Form[RegistrationInfo](
     mapping(
@@ -106,20 +96,19 @@ class Registration @Inject() (implicit val env: RuntimeEnvironment,
     Action {
       implicit request =>
         if (enableRefererAsOriginalUrl) {
-          SecureSocial.withRefererAsOriginalUrl(Ok(env.viewTemplates.getStartSignUpPage(startForm)))
+          SecureSocial.withRefererAsOriginalUrl(Ok(env.viewTemplates.getStartSignUpPage(startForm)(request, lang)))
         } else {
-          Ok(env.viewTemplates.getStartSignUpPage(startForm))
+          Ok(env.viewTemplates.getStartSignUpPage(startForm)(request, lang))
         }
     }
   }
 
   def handleStartSignUp = CSRFCheck {
-    Action.async {
+    builder.async {
       implicit request =>
-        implicit val lang = request.lang
         startForm.bindFromRequest.fold(
           errors => {
-            Future.successful(BadRequest(env.viewTemplates.getStartSignUpPage(errors)))
+            Future.successful(BadRequest(env.viewTemplates.getStartSignUpPage(errors)(request, lang)))
           },
           e => {
             val email = e.toLowerCase
@@ -129,10 +118,10 @@ class Registration @Inject() (implicit val env: RuntimeEnvironment,
                 maybeUser match {
                   case Some(user) =>
                     // user signed up already, send an email offering to login/recover password
-                    env.mailer.sendAlreadyRegisteredEmail(user)
+                    env.mailer.sendAlreadyRegisteredEmail(user)(request, lang)
                   case None =>
                     createToken(email, isSignUp = true).flatMap { token =>
-                      env.mailer.sendSignUpEmail(email, token.uuid)
+                      env.mailer.sendSignUpEmail(email, token.uuid)(request, lang)
                       env.userService.saveToken(token)
                     }
                 }
@@ -149,12 +138,12 @@ class Registration @Inject() (implicit val env: RuntimeEnvironment,
    * @return
    */
   def signUp(token: String) = CSRFAddToken {
-    Action.async {
+    builder.async {
       implicit request =>
         logger.debug("[securesocial] trying sign up with token %s".format(token))
         executeForToken(token, true, {
           _ =>
-            Future.successful(Ok(env.viewTemplates.getSignUpPage(form, token)))
+            Future.successful(Ok(env.viewTemplates.getSignUpPage(form, token)(request, lang)))
         })
     }
   }
@@ -163,15 +152,14 @@ class Registration @Inject() (implicit val env: RuntimeEnvironment,
    * Handles posts from the sign up page
    */
   def handleSignUp(token: String) = CSRFCheck {
-    Action.async {
+    builder.async {
       implicit request =>
-        implicit val lang = request.lang
         executeForToken(token, true, {
           t =>
             form.bindFromRequest.fold(
               errors => {
                 logger.debug("[securesocial] errors " + errors)
-                Future.successful(BadRequest(env.viewTemplates.getSignUpPage(errors, t.uuid)))
+                Future.successful(BadRequest(env.viewTemplates.getSignUpPage(errors, t.uuid)(request, lang)))
               },
               info => {
                 val id = if (env.usernamePasswordProviderConfigurations.withUserNameSupport) info.userName.get else t.email
@@ -200,7 +188,7 @@ class Registration @Inject() (implicit val env: RuntimeEnvironment,
                   deleted <- env.userService.deleteToken(t.uuid)
                 ) yield {
                   if (env.usernamePasswordProviderConfigurations.sendWelcomeEmail)
-                    env.mailer.sendWelcomeEmail(newUser)
+                    env.mailer.sendWelcomeEmail(newUser)(request, lang)
                   val eventSession = Events.fire(new SignUpEvent(saved)).getOrElse(request.session)
                   if (env.usernamePasswordProviderConfigurations.signupSkipLogin) {
                     env.authenticatorService.find(env.cookieAuthenticatorConfigurations.Id).map {

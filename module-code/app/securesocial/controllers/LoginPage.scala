@@ -18,11 +18,8 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
-import akka.stream.Materializer
-import play.api.http.{ FileMimeTypes, HttpErrorHandler, ParserConfiguration }
-import play.api.i18n.MessagesApi
-import play.api.libs.Files.TemporaryFileCreator
-import play.api.mvc.{ AnyContent, BodyParser, BodyParsers, ControllerComponents }
+import play.api.i18n.{ Langs }
+import play.api.mvc.ControllerComponents
 import play.api.{ Configuration, Environment }
 import play.filters.csrf.CSRFAddToken
 import securesocial.core._
@@ -38,23 +35,17 @@ import scala.concurrent.Future
  */
 class LoginPage @Inject() (implicit val env: RuntimeEnvironment,
   val configuration: Configuration,
-  val playEnv: Environment,
+  override val playEnv: Environment,
+  override val controllerComponents: ControllerComponents,
   val CSRFAddToken: CSRFAddToken,
-  val controllerComponents: ControllerComponents,
-  val parser: BodyParsers.Default,
-  val messagesApi: MessagesApi,
-  val fileMimeTypes: FileMimeTypes,
-  val config: ParserConfiguration,
-  val errorHandler: HttpErrorHandler,
-  val materializer: Materializer,
-  val temporaryFileCreator: TemporaryFileCreator) extends LoginPageTrait {}
+  val langs: Langs) extends LoginPageTrait {}
 
 trait LoginPageTrait
     extends SecureSocial {
 
   private val logger = play.api.Logger("securesocial.controllers.LoginPage")
   implicit val CSRFAddToken: CSRFAddToken
-  implicit val messagesApi: MessagesApi
+  implicit val langs: Langs
   /**
    * The property that specifies the page the user is redirected to after logging out.
    */
@@ -79,11 +70,10 @@ trait LoginPageTrait
         logger.debug("User already logged in, skipping login page. Redirecting to %s".format(to))
         Redirect(to)
       } else {
-        implicit val lang = request.lang
         if (enableRefererAsOriginalUrl) {
-          SecureSocial.withRefererAsOriginalUrl(Ok(env.viewTemplates.getLoginPage(UsernamePasswordProvider.loginForm)))
+          SecureSocial.withRefererAsOriginalUrl(Ok(env.viewTemplates.getLoginPage(UsernamePasswordProvider.loginForm)(request, langs.availables.head)))
         } else {
-          Ok(env.viewTemplates.getLoginPage(UsernamePasswordProvider.loginForm))
+          Ok(env.viewTemplates.getLoginPage(UsernamePasswordProvider.loginForm)(request, langs.availables.head))
         }
       }
     }

@@ -18,39 +18,29 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
-import akka.stream.Materializer
 import org.joda.time.DateTime
-import play.api.http.{ FileMimeTypes, HttpErrorHandler, ParserConfiguration }
-import play.api.i18n.MessagesApi
 import play.api.{ Configuration, Environment }
 import securesocial.core._
 import play.api.mvc._
 import play.api.i18n.Langs
-import play.api.libs.Files.TemporaryFileCreator
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 import securesocial.core.SignUpEvent
 import securesocial.core.AuthenticationResult.Authenticated
 import securesocial.core.LoginEvent
-import securesocial.core.BasicProfile
 import securesocial.core.services.SaveMode
 
 /**
  * A default controller that uses the BasicProfile as the application user type.
  */
-class LoginApi @Inject() (implicit val env: RuntimeEnvironment, val configuration: Configuration, val playEnv: Environment,
-    langs: Langs,
+class LoginApi @Inject() (implicit val env: RuntimeEnvironment,
+    val configuration: Configuration,
+    override val playEnv: Environment,
+    val langs: Langs,
     action: DefaultActionBuilder,
-    parsers: PlayBodyParsers,
-    val messagesApi: MessagesApi,
-    val parser: BodyParsers.Default,
-    val fileMimeTypes: FileMimeTypes,
-    val config: ParserConfiguration,
-    val errorHandler: HttpErrorHandler,
-    val materializer: Materializer,
-    val temporaryFileCreator: TemporaryFileCreator) extends SecureSocial {
+    parsers: PlayBodyParsers) extends SecureSocial {
 
-  val controllerComponents: ControllerComponents = DefaultControllerComponents(
+  override val controllerComponents: ControllerComponents = DefaultControllerComponents(
     action, parsers, messagesApi, langs, fileMimeTypes, executionContext
   )
 

@@ -18,13 +18,10 @@ package securesocial.controllers
 
 import javax.inject.Inject
 
-import akka.stream.Materializer
-import play.api.{ Application, Configuration, Environment }
+import play.api.{ Configuration, Environment }
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.http.{ FileMimeTypes, HttpErrorHandler, ParserConfiguration }
-import play.api.i18n.{ DefaultLangs, Lang, Langs, MessagesApi }
-import play.api.libs.Files.TemporaryFileCreator
+import play.api.i18n.{ Langs }
 import play.api.mvc._
 import play.filters.csrf.{ CSRFCheck, _ }
 import securesocial.core.SecureSocial._
@@ -40,17 +37,11 @@ import scala.concurrent.{ Await, Future }
  */
 class PasswordChange @Inject() (implicit val env: RuntimeEnvironment,
     val configuration: Configuration,
-    val playEnv: Environment,
+    override val playEnv: Environment,
     val CSRFAddToken: CSRFAddToken,
     val CSRFCheck: CSRFCheck,
-    val controllerComponents: ControllerComponents,
-    val parser: BodyParsers.Default,
-    val messagesApi: MessagesApi,
-    val fileMimeTypes: FileMimeTypes,
-    val config: ParserConfiguration,
-    val errorHandler: HttpErrorHandler,
-    val materializer: Materializer,
-    val temporaryFileCreator: TemporaryFileCreator) extends SecureSocial {
+    override val controllerComponents: ControllerComponents,
+    val langs: Langs) extends SecureSocial {
 
   val CurrentPassword = "currentPassword"
   val InvalidPasswordMessage = "securesocial.passwordChange.invalidPassword"
@@ -90,7 +81,6 @@ class PasswordChange @Inject() (implicit val env: RuntimeEnvironment,
   }
 
   private def execute[A](f: Form[ChangeInfo] => Future[Result])(implicit request: SecuredRequest[A, env.U]): Future[Result] = {
-    implicit val lang = Lang("en")
     val form = Form[ChangeInfo](
       mapping(
         CurrentPassword ->
@@ -124,8 +114,7 @@ class PasswordChange @Inject() (implicit val env: RuntimeEnvironment,
     SecuredAction.async { implicit request =>
       execute { form: Form[ChangeInfo] =>
         Future.successful {
-          implicit val lang = request.lang
-          Ok(env.viewTemplates.getPasswordChangePage(form))
+          Ok(env.viewTemplates.getPasswordChangePage(form)(request, lang, configuration))
         }
       }
     }
@@ -139,19 +128,17 @@ class PasswordChange @Inject() (implicit val env: RuntimeEnvironment,
   def handlePasswordChange = CSRFCheck {
     SecuredAction.async { implicit request =>
       execute { form: Form[ChangeInfo] =>
-        implicit val lang = request.lang
         form.bindFromRequest()(request).fold(
-          errors => Future.successful(BadRequest(env.viewTemplates.getPasswordChangePage(errors))),
+          errors => Future.successful(BadRequest(env.viewTemplates.getPasswordChangePage(errors)(request, lang, configuration))),
           info => {
             val newPasswordInfo = env.currentHasher.hash(info.newPassword)
-            val userLang = request.lang
             env.userService.updatePasswordInfo(request.user, newPasswordInfo).map {
               case Some(u) =>
-                env.mailer.sendPasswordChangedNotice(u)(request, userLang)
-                val result = Redirect(onHandlePasswordChangeGoTo).flashing(Success -> messagesApi(OkMessage)(userLang))
+                env.mailer.sendPasswordChangedNotice(u)(request, lang)
+                val result = Redirect(onHandlePasswordChangeGoTo).flashing(Success -> messagesApi(OkMessage)(lang))
                 Events.fire(new PasswordChangeEvent(request.user)).map(result.withSession).getOrElse(result)
               case None =>
-                Redirect(onHandlePasswordChangeGoTo).flashing(Error -> messagesApi("securesocial.password.error")(userLang))
+                Redirect(onHandlePasswordChangeGoTo).flashing(Error -> messagesApi("securesocial.password.error")(lang))
             }
           }
         )
